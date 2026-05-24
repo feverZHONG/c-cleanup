@@ -1,5 +1,5 @@
 """C 盘状态快速查看。"""
-import ctypes, io, sys
+import ctypes, io, sys, subprocess
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
@@ -13,6 +13,17 @@ pct = used / total.value * 100
 print(f"C:   Total: {total.value/1e9:.1f} GB")
 print(f"     Used:  {used/1e9:.1f} GB  ({pct:.0f}%)")
 print(f"     Free:  {free.value/1e9:.1f} GB")
+print(f"     (字节: {total.value:,} 总 / {free.value:,} 可用)")
+
+try:
+    r = subprocess.run(["powershell", "-Command", "(Get-PSDrive C).Free"],
+                      capture_output=True, text=True, timeout=5)
+    if r.stdout.strip().isdigit():
+        ps_free = int(r.stdout.strip())
+        diff_mb = (free.value - ps_free) / 1e6
+        print(f"     Win11 资源管理器: {ps_free/1e9:.2f} GB  (差: {diff_mb:+.1f} MB)")
+except:
+    pass
 
 if free.value < 2e9:
     print("\n[!!] 紧急：C 盘不足 2 GB，停止写入")
