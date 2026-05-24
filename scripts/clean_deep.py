@@ -29,28 +29,25 @@ if os.path.isdir(dxcache):
     with os.scandir(dxcache) as it:
         for entry in it:
             if entry.is_file():
-                files.append((entry.name, entry.stat().st_size, entry.stat().st_mtime))
+                files.append((entry.name, entry.stat().st_size))
 
 # 按前缀分组
 prefixes = {}
-for name, sz, mtime in files:
+for name, sz in files:
     p = name[:8]
     if p not in prefixes:
-        prefixes[p] = {"size": 0, "count": 0, "newest": 0}
+        prefixes[p] = {"size": 0, "count": 0}
     prefixes[p]["size"] += sz
     prefixes[p]["count"] += 1
-    if mtime > prefixes[p]["newest"]:
-        prefixes[p]["newest"] = mtime
 
-# 自动检测当前驱动前缀：最新修改时间的前缀
+# 自动检测当前驱动前缀：最大大小的前缀
 import datetime
-current_prefix = max(prefixes, key=lambda p: prefixes[p]["newest"]) if prefixes else ""
+current_prefix = max(prefixes, key=lambda p: prefixes[p]["size"]) if prefixes else ""
 
 print(f"DXCache 文件分布 (当前前缀: {current_prefix}):")
 for p, info in sorted(prefixes.items(), key=lambda x: -x[1]["size"]):
-    dt = datetime.datetime.fromtimestamp(info["newest"]).strftime("%m-%d %H:%M")
     tag = " <<< 当前" if p == current_prefix else ""
-    print(f"  {p}: {human(info['size'])} ({info['count']} files, newest: {dt}){tag}")
+    print(f"  {p}: {human(info['size'])} ({info['count']} files){tag}")
 
 print()
 current_files = [(n, s) for n, s in files if n.startswith(current_prefix)]
