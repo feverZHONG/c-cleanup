@@ -1,34 +1,35 @@
 """C 盘状态快速查看。"""
-import ctypes, io, sys, subprocess
+import ctypes, io, sys
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
 
-free = ctypes.c_ulonglong(0)
-total = ctypes.c_ulonglong(0)
-ctypes.windll.kernel32.GetDiskFreeSpaceExW("C:", None, ctypes.byref(total), ctypes.byref(free))
+free_avail = ctypes.c_ulonglong(0)
+total_bytes = ctypes.c_ulonglong(0)
+free_total = ctypes.c_ulonglong(0)
 
-used = total.value - free.value
-pct = used / total.value * 100
+ctypes.windll.kernel32.GetDiskFreeSpaceExW(
+    "C:",
+    ctypes.byref(free_avail),
+    ctypes.byref(total_bytes),
+    ctypes.byref(free_total),
+)
 
-print(f"C:   Total: {total.value/1e9:.1f} GB")
+used = total_bytes.value - free_avail.value
+pct = used / total_bytes.value * 100
+
+# Decimal GB (10^9) - what Python/standard uses
+gb_dec = free_avail.value / 1e9
+# Binary GiB (1024^3) - what Windows Explorer uses
+gib = free_avail.value / (1024 ** 3)
+
+print(f"C:   Total: {total_bytes.value/1e9:.1f} GB")
 print(f"     Used:  {used/1e9:.1f} GB  ({pct:.0f}%)")
-print(f"     Free:  {free.value/1e9:.1f} GB")
-print(f"     (字节: {total.value:,} 总 / {free.value:,} 可用)")
+print(f"     Free:  {gb_dec:.2f} GB  ({gib:.2f} GiB)")
+print(f"     资源管理器显示的是 GiB 值 ({gib:.2f} GiB)，不是 GB")
 
-try:
-    r = subprocess.run(["powershell", "-Command", "(Get-PSDrive C).Free"],
-                      capture_output=True, text=True, timeout=5)
-    if r.stdout.strip().isdigit():
-        ps_free = int(r.stdout.strip())
-        fe_free = ps_free - int(700 * 1024 * 1024)
-        fe_gb = fe_free / 1e9
-        print(f"     Win11 资源管理器: {fe_gb:.2f} GB")
-except:
-    pass
-
-if free.value < 2e9:
+if free_avail.value < 2e9:
     print("\n[!!] 紧急：C 盘不足 2 GB，停止写入")
-elif free.value < 5e9:
+elif free_avail.value < 5e9:
     print("\n[!]  警告：C 盘不足 5 GB，建议清理")
 else:
     print("\n[i]  正常")
