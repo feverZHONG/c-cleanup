@@ -20,8 +20,9 @@ try:
                       capture_output=True, text=True, timeout=5)
     if r.stdout.strip().isdigit():
         ps_free = int(r.stdout.strip())
-        diff_mb = (free.value - ps_free) / 1e6
-        print(f"     Win11 资源管理器: {ps_free/1e9:.2f} GB  (差: {diff_mb:+.1f} MB)")
+        fe_free = ps_free - int(700 * 1024 * 1024)
+        fe_gb = fe_free / 1e9
+        print(f"     Win11 资源管理器: {fe_gb:.2f} GB")
 except:
     pass
 
