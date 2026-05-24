@@ -4,6 +4,8 @@
 
 [中文](README.md) · [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue)](#) [![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-brightgreen)](#)
 
+This is a **skill for the QClaw / OpenClaw agent platform**. Installed as a skill, it can be triggered via natural language (e.g., "C drive is full", "clean up disk space"). It also works as a standalone tool when invoked directly.
+
 ## Overview
 
 A collection of Python scripts for Windows C: drive space reclamation. Each script handles one category of cleanup, designed to be safe, repeatable, and resilient.
@@ -34,6 +36,26 @@ Core principles:
 | `clean_conservative.py` | Conservative cleanup | `python scripts/clean_conservative.py` |
 | `clean_deep.py` | Deep cleanup (current DXCache) | `python scripts/clean_deep.py` (read-only)<br>`python scripts/clean_deep.py --force` |
 | `clean_winupdate.py` | Windows Update cache | `python scripts/clean_winupdate.py` (read-only)<br>`python scripts/clean_winupdate.py --force` |
+
+## Installation
+
+### Install as a QClaw Skill
+
+```bash
+skillhub_install install_skill c-cleanup
+```
+
+Once installed, the agent automatically triggers the appropriate script when you say "C drive is full", "clean up disk space", or similar natural language commands.
+
+### Standalone Use
+
+Clone the repo and run scripts directly:
+
+```bash
+git clone https://github.com/feverZHONG/c-cleanup.git
+cd c-cleanup
+python scripts/status.py
+```
 
 ## Quick Start
 

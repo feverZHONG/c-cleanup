@@ -4,6 +4,8 @@
 
 [English](README.en.md) · [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue)](#) [![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-brightgreen)](#)
 
+这是 **QClaw / OpenClaw 智能体平台** 的 C 盘清理技能（skill）。安装后可通过自然语言直接触发清理操作，也可作为独立工具手动运行。
+
 ## 概述
 
 这套工具覆盖了日常 C 盘清理的绝大部分场景，把常见的手动操作集中成一批可重复执行的 Python 脚本。每个脚本只干一类事，用完即走。
@@ -34,6 +36,26 @@
 | `clean_conservative.py` | 保守清理 | `python scripts/clean_conservative.py` |
 | `clean_deep.py` | 深度清理（当前 DXCache） | `python scripts/clean_deep.py`（只读）<br>`python scripts/clean_deep.py --force` |
 | `clean_winupdate.py` | Windows Update 缓存 | `python scripts/clean_winupdate.py`（只读）<br>`python scripts/clean_winupdate.py --force` |
+
+## 安装
+
+### 作为 QClaw 技能安装
+
+```bash
+skillhub_install install_skill c-cleanup
+```
+
+安装后，当你说"C盘满了"、"清理C盘"、"释放C盘空间"等指令时，智能体会自动触发对应脚本。
+
+### 手动使用
+
+克隆仓库后直接调用脚本：
+
+```bash
+git clone https://github.com/feverZHONG/c-cleanup.git
+cd c-cleanup
+python scripts/status.py
+```
 
 ## 快速开始
 
