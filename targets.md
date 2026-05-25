@@ -11,7 +11,7 @@
 | **npm/pip 缓存** | `%LOCALAPPDATA%\pip\cache`、`%LOCALAPPDATA%\npm-cache` | 几十~几百 MB | 删除后下次安装会重新下载 |
 | **Steam htmlcache** | `%LOCALAPPDATA%\Steam\htmlcache` | 200~300 MB | Steam 内置浏览器缓存，无害 |
 | **bililive** | `%LOCALAPPDATA%\bililive` | 100~200 MB | B站直播缓存 |
-| **ima.copilot 缓存** | `%LOCALAPPDATA%\ima.copilot` | 600~700 MB | IMA 知识库客户端缓存，用户确认后可清 |
+| **ima.copilot 缓存** | `%LOCALAPPDATA%\ima.copilot` | 600~700 MB | IMA 知识库客户端缓存，删后自动重建 |
 | **NEO 编译器缓存** | `%LOCALAPPDATA%\NEO\neo_compiler_cache` | ~200 MB | OpenCL 着色器编译缓存（.cl_cache），删后下次启动重建 |
 | **GameViewer webviewcache** | `%LOCALAPPDATA%\GameViewer\webviewcache` | ~125 MB | 网页视图缓存，可安全清 |
 | **OfficePLUS WebView2** | `%LOCALAPPDATA%\OfficePLUS\webview2` | ~130 MB | OfficePLUS 插件 WebView2 缓存，可安全清 |

@@ -1,13 +1,9 @@
-"""清理 Windows Update 下载缓存（SoftwareDistribution\Download）。
+"""清理 Windows Update 下载缓存 (SoftwareDistribution\Download)。
 需要管理员权限。"""
 import os, shutil, subprocess, sys, ctypes, io
+from utils import human
 
 sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding="utf-8", errors="replace")
-
-def human(sz):
-    if sz > 1e9: return f"{sz/1e9:.2f} GB"
-    if sz > 1e6: return f"{sz/1e6:.0f} MB"
-    return f"{sz/1e3:.0f} KB"
 
 sd = r"C:\Windows\SoftwareDistribution\Download"
 
@@ -17,7 +13,7 @@ if not ctypes.windll.shell32.IsUserAnAdmin():
     sys.exit(1)
 
 if not os.path.isdir(sd):
-    print("SoftwareDistribution\\Download: 不存在，无需清理。")
+    print("SoftwareDistribution\Download: 不存在，无需清理。")
     sys.exit(0)
 
 # Measure before
@@ -31,15 +27,16 @@ with os.scandir(sd) as it:
                 sz_before += sum(e.stat().st_size for e in os.scandir(entry.path) if e.is_file())
         except: pass
 
-print(f"SoftwareDistribution\\Download 缓存: {human(sz_before)}")
+print(f"SoftwareDistribution\Download 缓存: {human(sz_before)}")
 
 if "--force" not in sys.argv:
     print("\n这是扫描模式。要真正清理，请加上 --force 参数。")
     sys.exit(0)
 
-# Stop services
-for svc in ["wuauserv", "TrustedInstaller"]:
-    subprocess.run(["net", "stop", svc, "/y"], capture_output=True, text=True)
+# Stop Windows Update service only
+# Note: TrustedInstaller is intentionally NOT stopped.
+# Stopping it can cause cascading service failures and is unnecessary here.
+subprocess.run(["net", "stop", "wuauserv", "/y"], capture_output=True, text=True)
 
 # Clean
 try:
@@ -56,7 +53,7 @@ try:
 except Exception as e:
     print(f"清理失败: {e}")
 
-# Restart services
+# Restart service
 subprocess.run(["net", "start", "wuauserv"], capture_output=True, text=True)
 
 # Show result
