@@ -19,7 +19,7 @@
 
 | 类别 | 覆盖内容 |
 |------|----------|
-| 🧹 安全清理 | Updater 缓存、Temp、npm/pip 缓存、旧 NVIDIA 着色器缓存、ima.copilot、NEO 编译器缓存、GameViewer/OfficePLUS 网页缓存 |
+| 🧹 安全清理 | Updater 缓存、Temp、npm/pip 缓存、旧 NVIDIA 着色器缓存、ima.copilot、NEO 编译器缓存、GameViewer/OfficePLUS 网页缓存<br>📌 支持 `--dry-run`（预览）和 `--log`（记录） |
 | 🔧 保守清理 | Edge 浏览器缓存、PowerToys 更新包、Steam 缓存、D3DSCache、bililive 直播缓存、豆包代码缓存 |
 | ⚠️ 深度清理 | 当前 NVIDIA 驱动着色器缓存（`--force` 确认） |
 | 🪟 Windows Update | 停服清理下载缓存（需管理员权限） |
@@ -30,6 +30,7 @@
 
 | 脚本 | 用途 | 执行方式 |
 |------|------|----------|
+| `clean.py` | 🏆 统一入口（推荐） | `python scripts/clean.py`<br>`python scripts/clean.py --level all --dry-run` |
 | `status.py` | 查看 C 盘剩余空间 | `python scripts/status.py` |
 | `scan_appdata.py` | 扫描 AppData\Local 大于 100MB 目录 | `python scripts/scan_appdata.py` |
 | `clean_safe.py` | 安全清理 | `python scripts/clean_safe.py` |
@@ -60,17 +61,18 @@ python scripts/status.py
 ## 快速开始
 
 ```bash
-# 1. 查看 C 盘状态
-python scripts/status.py
+# 推荐：统一入口（自动匹配清理等级）
+python scripts/clean.py                         # 安全清理
+python scripts/clean.py --level all             # 安全 + 保守
+python scripts/clean.py --level all --dry-run   # 预览全部可释放空间
 
-# 2. 扫描分析大目录
-python scripts/scan_appdata.py
-
-# 3. 安全清理（可随时运行，锁文件自动跳过）
-python scripts/clean_safe.py
-
-# 4. 保守清理（定期维护）
-python scripts/clean_conservative.py
+# 或直接使用子脚本
+python scripts/status.py                        # 查看 C 盘状态
+python scripts/scan_appdata.py                  # 扫描大目录
+python scripts/clean_safe.py                    # 安全清理
+python scripts/clean_safe.py --dry-run          # 安全清理预览
+python scripts/clean_conservative.py            # 保守清理
+python scripts/clean_deep.py                    # 深度清理（只读扫描）
 ```
 
 ## 安全原则

@@ -19,7 +19,7 @@ Core principles:
 
 | Category | Scope |
 |----------|-------|
-| 🧹 Safe Cleanup | Updater cache, Temp, npm/pip cache, old NVIDIA DXCache, ima.copilot, NEO compiler cache, GameViewer/OfficePLUS web caches |
+| 🧹 Safe Cleanup | Updater cache, Temp, npm/pip cache, old NVIDIA DXCache, ima.copilot, NEO compiler cache, GameViewer/OfficePLUS web caches<br>📌 Supports `--dry-run` (preview) and `--log` (record) |
 | 🔧 Conservative Cleanup | Edge browser cache, PowerToys updates, Steam cache, D3DSCache, bililive cache, Doubao code cache |
 | ⚠️ Deep Cleanup | Current NVIDIA driver shader cache (`--force` required) |
 | 🪟 Windows Update | Service-stop cleanup of download cache (admin required) |
@@ -30,6 +30,7 @@ Core principles:
 
 | Script | Purpose | Usage |
 |--------|---------|-------|
+| `clean.py` | 🏆 Unified entry (recommended) | `python scripts/clean.py`<br>`python scripts/clean.py --level all --dry-run` |
 | `status.py` | C: drive space overview | `python scripts/status.py` |
 | `scan_appdata.py` | Scan large AppData directories | `python scripts/scan_appdata.py` |
 | `clean_safe.py` | Safe cleanup | `python scripts/clean_safe.py` |
@@ -60,17 +61,18 @@ python scripts/status.py
 ## Quick Start
 
 ```bash
-# 1. Check C: drive status
-python scripts/status.py
+# Recommended: unified entry point
+python scripts/clean.py                         # Safe cleanup
+python scripts/clean.py --level all             # Safe + Conservative
+python scripts/clean.py --level all --dry-run   # Preview all reclaimable space
 
-# 2. Scan for large directories
-python scripts/scan_appdata.py
-
-# 3. Safe cleanup (run anytime, locked files skipped)
-python scripts/clean_safe.py
-
-# 4. Conservative cleanup (periodic maintenance)
-python scripts/clean_conservative.py
+# Or use individual scripts
+python scripts/status.py                        # Check C: drive status
+python scripts/scan_appdata.py                  # Scan large directories
+python scripts/clean_safe.py                    # Safe cleanup
+python scripts/clean_safe.py --dry-run          # Safe cleanup preview
+python scripts/clean_conservative.py            # Conservative cleanup
+python scripts/clean_deep.py                    # Deep cleanup (read-only scan)
 ```
 
 ## Safety Tiers
