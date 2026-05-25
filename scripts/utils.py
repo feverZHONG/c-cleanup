@@ -78,6 +78,7 @@ def rm_dir_contents_gentle(path, label):
                         total_skip += 1
             except (PermissionError, OSError):
                 total_skip += 1
+        format_progress(min(i + batch_size, len(entries)), len(entries), label)
         if i > 0 and i % 200 == 0:
             time.sleep(0.2)
     if total_sz > 0:
@@ -100,6 +101,36 @@ def rm_glob_files(directory, prefix):
                     try: os.remove(entry.path)
                     except: pass
     return total, count
+
+
+import datetime
+
+def log_cleanup(cleanup_type, before_gb, after_gb, reclaimed_gb, log_path):
+    """Append a cleanup record to the history file."""
+    from datetime import date
+    row = "| {} | {} | {:.1f} | {:.1f} | {:.1f} |\n".format(
+        date.today().isoformat(), cleanup_type, before_gb, after_gb, reclaimed_gb
+    )
+    try:
+        os.makedirs(os.path.dirname(log_path) or ".", exist_ok=True)
+        # If file doesn't exist or is empty, create with header
+        if not os.path.isfile(log_path) or os.path.getsize(log_path) == 0:
+            header = "# 清理记录\n\n| 日期 | 类型 | 清理前 (GB) | 清理后 (GB) | 释放 (GB) |\n|------|------|-------------|-------------|-----------|\n"
+            with open(log_path, "w", encoding="utf-8") as f:
+                f.write(header)
+        with open(log_path, "a", encoding="utf-8") as f:
+            f.write(row)
+        return True
+    except Exception as e:
+        print(f"  [WARN] 写入清理记录失败: {e}")
+        return False
+
+def format_progress(current, total, label=""):
+    """Print a progress indicator if total is large enough."""
+    if total >= 100 and current % 100 == 0:
+        pct = int(current / total * 100)
+        meta = f" ({label})" if label else ""
+        print(f"  ... 处理中: {current}/{total} ({pct}%){meta}")
 
 def get_c_drive_free():
     """Get C drive free space in bytes (available to caller)."""
