@@ -39,7 +39,7 @@ def rm_dir_contents(path, label):
                 sub_sz = sum(e.stat().st_size for e in os.scandir(entry.path) if e.is_file())
                 sz += sub_sz
                 try:
-                    shutil.rmtree(entry.path, onexc=lambda *a: None)
+                    shutil.rmtree(entry.path, onerror=lambda *a: None)
                 except PermissionError:
                     skipped += 1
         except (PermissionError, OSError):
@@ -73,7 +73,7 @@ def rm_dir_contents_gentle(path, label):
                     sub_sz = sum(e.stat().st_size for e in os.scandir(entry.path) if e.is_file())
                     total_sz += sub_sz
                     try:
-                        shutil.rmtree(entry.path, onexc=lambda *a: None)
+                        shutil.rmtree(entry.path, onerror=lambda *a: None)
                     except PermissionError:
                         total_skip += 1
             except (PermissionError, OSError):
