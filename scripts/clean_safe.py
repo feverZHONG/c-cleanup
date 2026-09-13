@@ -69,7 +69,9 @@ updater_dirs = [
     "autoclaw-updater", "cherrystudio-updater", "edm-updater",
     "anythingllm-desktop-updater", "bilibili-updater", "canva-updater",
     "qq-chat-updater", "motrix-updater", "quark-cloud-drive-updater",
-    "@prompt-optimizerdesktop-updater",
+    "@prompt-optimizerdesktop-updater", "com.ugreen.desktop-updater",
+    "@deepseek-aidsh-desktop-updater", "chatglm-updater",
+    "qclaw-updater", "lm-studio-updater",
 ]
 for d in updater_dirs:
     reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, d), d)
@@ -102,6 +104,9 @@ reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "pi
 # -- npm 缓存 --
 reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "npm-cache"), "npm-cache")
 
+# -- pnpm 缓存 --
+reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "pnpm-cache"), "pnpm-cache")
+
 # -- ima.copilot --
 reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "ima.copilot"), "ima.copilot")
 
@@ -113,6 +118,14 @@ reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "Ga
 
 # -- OfficePLUS WebView2 --
 reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "OfficePLUS", "webview2"), "OfficePLUS WebView2")
+
+# -- CrashDumps 崩溃转储 (清内容不删目录) --
+reclaimed += (_dry_rm_dir_contents_gentle if DRY_RUN else rm_dir_contents_gentle)(
+    os.path.join(localappdata, "CrashDumps"), "CrashDumps")
+
+# -- SquirrelTemp 更新残留 (KOOK 等 .NET Squirrel 安装器，清内容不删目录) --
+reclaimed += (_dry_rm_dir_contents_gentle if DRY_RUN else rm_dir_contents_gentle)(
+    os.path.join(localappdata, "SquirrelTemp"), "SquirrelTemp")
 
 print()
 tag = "将释放" if DRY_RUN else "释放"

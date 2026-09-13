@@ -80,6 +80,17 @@ reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "bi
 reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "Doubao", "User Data", "update_downloads"), "Doubao update_downloads")
 doubao_cc = os.path.join(localappdata, "Doubao", "User Data", "Default", "Code Cache")
 reclaimed += (_dry_rm_dir_contents if DRY_RUN else rm_dir_contents)(doubao_cc, "Doubao Code Cache")
+# Doubao Default 下其余可重建缓存（IndexedDB 是聊天记录，不碰）
+for sub in ("Cache", "GPUCache", "Service Worker", "DawnGraphiteCache"):
+    reclaimed += (_dry_rm_dir_contents if DRY_RUN else rm_dir_contents)(
+        os.path.join(localappdata, "Doubao", "User Data", "Default", sub), f"Doubao {sub}")
+
+# -- CalabiYau 缓存 (Saved 是用户数据，不碰) --
+reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "CalabiYau", "cache"), "CalabiYau cache")
+reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "CalabiYau", "QtWebEngine"), "CalabiYau QtWebEngine")
+
+# -- GenerativeGame 崩溃日志 (Saved 是用户数据，不碰) --
+reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "GenerativeGame", ".sentry-native"), "GenerativeGame .sentry-native")
 
 print()
 tag = "将释放" if DRY_RUN else "释放"
