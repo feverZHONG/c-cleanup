@@ -153,6 +153,69 @@ net start wuauserv
 
 **用户决定（2026-08-25）：** oem131 (32.0.16.1074) 被引用计数挡着 → **留着，不删**。用户原则：**没东西在沿用的话一般都能清；有引用就留着**。
 
+### 🔴 2026-09-25 重要纠正：「重启后再试」是无效经验
+
+**背景：** 2026-08-24 记录待办「重启后删 oem131.inf」，此后 9-12、9-25 两次会话重新尝试，
+报错始终是 `One or more devices are presently installed using the specified INF`。
+**系统 2026-09-22 已重启过**（`(Get-CimInstance Win32_OperatingSystem).LastBootUpTime` 实测），
+重启后依然无法删除 → **坐实「重启释放引用计数」的假设是错的。**
+
+**真实原因（2026-09-25 实测定位）：**
+
+| 查证项 | 结果 |
+|--------|------|
+| `pnputil /enum-devices /drivers` | 无任何设备实例绑定 oem131 / oem246 |
+| Display class registry（`HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-...}`） | RTX 4060 只绑 **oem280.inf**（32.0.16.1692）；其余四个虚拟显示适配器是 Intel/Parsec/GameViewer/OrayIdd，与 nvami 无关 |
+| oem131 / oem246 / oem280 | **Original Name 全是 `nvami.inf`** |
+
+**结论：** 挡路的是 **`nvami.inf` 这个 Original Name 的多版本共存登记**，不是设备实例引用。
+只要当前驱动（oem280 = nvami.inf）还装着，Windows 就永远拒绝删除同名的旧版本包。
+**除了卸载重装显卡驱动，`pnputil /delete-driver` 这条路走不通 —— 别再等重启了。**
+
+**可行的替代方案：文件级删除（绕过 pnputil，直接删 DriverStore 目录）**
+
+```powershell
+# 需管理员。先备份，再删两个旧版本目录
+$keep = 'nvami.inf_amd64_abfe31618d39633f'   # ← 当前驱动对应的目录，务必先核实！
+Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filter 'nvami.inf_amd64_*' |
+  Where-Object { $_.Name -ne $keep } |
+  ForEach-Object { Remove-Item $_.FullName -Recurse -Force }
+```
+
+**⚠ 用前必须核实哪个目录是当前驱动：** 目录名是哈希，与 oem 号无法直接对应。
+核对方式（`DriverVersion` 对不上就别删）：
+```powershell
+# 逐个目录读 nvami.inf 的 DriverVer，找 32.0.16.1692（= 当前驱动）
+Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filter 'nvami.inf_amd64_*' |
+  ForEach-Object {
+    $inf = Join-Path $_.FullName 'nvami.inf'
+    if (Test-Path $inf) {
+      "$($_.Name)  ->  " + ((Select-String -Path $inf -Pattern '^DriverVer' | Select-Object -First 1).Line)
+    }
+  }
+```
+
+**风险与取舍：**
+- ✅ 当前驱动完全不受影响，GPU 正常工作
+- ❌ **失去「回滚驱动程序」到该旧版的能力**（设备管理器里那个按钮会失效）
+- ⚠ **`DriverStore\FileRepository` 需管理员权限**（Owner: `NT AUTHORITY\SYSTEM`，`BUILTIN\Users` 只有 ReadAndExecute）
+- ⚠ 删目录属**未走正规卸载流程**，Windows 的驱动包索引不会同步更新。
+  实测删完系统正常，但这属于「取舍」不是「无风险」——**只删确定用不到的旧版本**。
+- 🔁 别用 `pnputil /delete-driver /force`（技能内明令禁止，会把设备搞成无驱动状态）
+
+**2026-09-25 实测目录清单（三个 nvami 共 8,119 MB）：**
+
+| DriverStore 目录 | 大小 |
+|------------------|------|
+| `nvami.inf_amd64_1a0e2bbd9919af1d` | 2,696 MB |
+| `nvami.inf_amd64_46b14a8ba26be7f7` | 2,696 MB |
+| `nvami.inf_amd64_abfe31618d39633f` | 2,727 MB |
+
+删除两个旧版本 ≈ **释放 5.4 GB**。
+
+**⏳ 当前待办（2026-09-25，等阁下管理员终端执行）：** 删除 oem131 (610.74) + oem246 (610.88) 两个旧版对应目录。
+当前驱动 **616.92 / 32.0.16.1692**。已封装进 `scripts/clean_admin.ps1 -DriverStoreFiles`。
+
 ---
 
 ## 实战记录：NVIDIA App OTA 缓存

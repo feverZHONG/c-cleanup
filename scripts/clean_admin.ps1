@@ -13,7 +13,8 @@
 # 只清理 targets.md 中标注为 Safe 的目标，外加 DriverStore 旧驱动（需 -DriverStore 开关）。
 
 param(
-    [switch]$DriverStore,   # 加此开关才清 DriverStore 旧 NVIDIA 驱动
+    [switch]$DriverStore,       # 清 DriverStore 旧驱动（pnputil 正规卸载路径）
+    [switch]$DriverStoreFiles,  # ⭐ 清 DriverStore 旧驱动（文件级直删，绕过 pnputil 引用计数）
     [switch]$DryRun
 )
 
@@ -73,7 +74,16 @@ if (Test-Path $wu) {
     }
 }
 
-# --- Confirm: DriverStore 旧 NVIDIA 驱动（约 2.6 GB/份，删掉会失去回滚旧驱动的能力）---
+# --- Confirm: DriverStore 旧 NVIDIA 驱动 ---
+# 两条路：
+#   -DriverStore      → pnputil /delete-driver（正规卸载）。⚠ 实测走不通：
+#                        nvami.inf 多版本共存时永远报 "One or more devices are presently installed"，
+#                        重启无效（2026-09-22 重启后仍失败）。保留此开关仅为兼容/留证。
+#   -DriverStoreFiles → ⭐ 文件级直删 DriverStore 目录，绕过 pnputil 的引用计数。
+#                        自动读每个 nvami.inf 的 DriverVer，与当前驱动版本比对，
+#                        只删版本低于当前的目录，保留当前版本。删前打印清单。
+$dsRepo = 'C:\Windows\System32\DriverStore\FileRepository'
+
 if ($DriverStore) {
     $dsScript = Join-Path $PSScriptRoot 'clean_driverstore.py'
     if (Test-Path $dsScript) {
@@ -83,7 +93,68 @@ if ($DriverStore) {
         $script:rows += "[WARN] 找不到 clean_driverstore.py"
     }
 } else {
-    $script:rows += "[SKIP] DriverStore 旧驱动 : 未加 -DriverStore 开关"
+    $script:rows += "[SKIP] DriverStore 旧驱动 (pnputil 路径) : 未加 -DriverStore 开关"
+}
+
+if ($DriverStoreFiles) {
+    # 1. 当前驱动版本（registry 权威，比 nvidia-smi 的 616.92 格式更直接可比）
+    $curVer = $null
+    $cls = 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}'
+    Get-ChildItem $cls -EA SilentlyContinue | ForEach-Object {
+        $p = Get-ItemProperty $_.PSPath -EA SilentlyContinue
+        if ($p.InfPath -eq 'oem280.inf' -or $p.DriverDesc -match 'RTX 4060') { $curVer = $p.DriverVersion }
+    }
+    if (-not $curVer) {
+        $script:rows += "[WARN] 无法确定当前驱动版本，跳过 DriverStore 文件级清理（保险起见不删）"
+    } else {
+        $script:rows += ("       当前驱动版本: {0}" -f $curVer)
+
+        # 2. 枚举 nvami 目录 + 读各自的 DriverVer
+        $cands = @()
+        Get-ChildItem $dsRepo -Directory -Filter 'nvami.inf_amd64_*' -EA SilentlyContinue | ForEach-Object {
+            $infFile = Join-Path $_.FullName 'nvami.inf'
+            if (Test-Path $infFile) {
+                $line = (Select-String -Path $infFile -Pattern '^\s*DriverVer' | Select-Object -First 1).Line
+                if ($line -match ',\s*([\d.]+)\s*$') {
+                    $ver = $Matches[1]
+                    $sz = (Get-ChildItem $_.FullName -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum).Sum
+                    $cands += [pscustomobject]@{ Name = $_.Name; Full = $_.FullName; Ver = $ver; Size = $sz }
+                }
+            }
+        }
+
+        if (-not $cands) {
+            $script:rows += "       未找到任何 nvami.inf_amd64_* 目录"
+        } else {
+            # 3. 版本比对：低于当前的删，等于当前的留
+            $toDel = $cands | Where-Object { $_.Ver -ne $curVer }
+            $keep  = $cands | Where-Object { $_.Ver -eq $curVer }
+
+            foreach ($k in $keep)  { $script:rows += ("       [KEEP] {0} : ver={1} {2:N0} MB (当前驱动)" -f $k.Name, $k.Ver, ($k.Size/1MB)) }
+            foreach ($d in $toDel) { $script:rows += ("       [DEL]  {0} : ver={1} {2:N0} MB" -f $d.Name, $d.Ver, ($d.Size/1MB)) }
+
+            if (-not $toDel) {
+                $script:rows += "       没有旧版本可删 ✓"
+            } elseif ($DryRun) {
+                $sum = ($toDel | Measure-Object Size -Sum).Sum
+                $script:rows += ("       [DRY]  将释放 {0:N0} MB" -f ($sum/1MB))
+            } else {
+                foreach ($d in $toDel) {
+                    try {
+                        Remove-Item $d.Full -Recurse -Force -EA Stop
+                        $script:freed += $d.Size
+                        $script:rows += ("       [OK]   已删 {0} : {1:N0} MB" -f $d.Name, ($d.Size/1MB))
+                    } catch {
+                        $script:rows += ("       [FAIL] {0} : {1}" -f $d.Name, $_.Exception.Message)
+                    }
+                }
+                $script:rows += "       ⚠ 已失去回滚到上述旧版驱动的能力（当前驱动不受影响）"
+            }
+        }
+    }
+    $script:rows += "       ⚠ 下次驱动更新后重跑本开关，才能清掉本次保留下来的上一版"
+} else {
+    $script:rows += "[SKIP] DriverStore 旧驱动 (文件级直删) : 未加 -DriverStoreFiles 开关"
 }
 
 $script:rows | ForEach-Object { Write-Host $_ }

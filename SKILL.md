@@ -26,7 +26,7 @@ description: C盘安全清理与空间回收技能。当用户提到清理C盘�
 | `scripts/clean_deep.py` | 深度清理：当前 DXCache（`--force` 才删） |
 | `scripts/clean_winupdate.py` | Windows Update 缓存（`--force` 才删，需管理员） |
 | `scripts/clean_driverstore.py` | DriverStore 旧 NVIDIA 驱动清理（扫描+`--force`，自动识别当前版本） |
-| `scripts/clean_admin.ps1` | **⭐ 提权批处理**：Nsight×2 + Installer2 + WinUpdate 缓存（`-DriverStore` 带上旧驱动）。需阁下在管理员 PowerShell 里跑 |
+| `scripts/clean_admin.ps1` | **⭐ 提权批处理**：Nsight×2 + Installer2 + WinUpdate 缓存（`-DriverStore` 走 pnputil，`-DriverStoreFiles` 走文件级直删）。需阁下在管理员 PowerShell 里跑 |
 | `scripts/scan_appdata.py` | 扫描 AppData\Local 大户 |
 | `targets.md` | 清理目标分级表（Safe / Confirm / NoTouch） |
 | `reference.md` | 脚本详情 + 大户参考表 + Windows Update 参考 + 清理历史 |
@@ -39,6 +39,9 @@ description: C盘安全清理与空间回收技能。当用户提到清理C盘�
 3. **或直接执行对应脚本** - `python scripts/<脚本名>.py`
 4. **提权目标单独走一步** - `C:\Program Files\*` 和 `C:\Windows\*` 下的目标普通会话删不掉，
    交给阁下在**管理员 PowerShell** 里跑 `scripts/clean_admin.ps1`（Hermes 里自动提权会被 UAC 取消）
+   - 默认：Nsight×2 + Installer2 + Windows Update 缓存
+   - `-DriverStoreFiles`：清 DriverStore 旧驱动（文件级直删，自动保留当前版本）
+   - 先加 `-DryRun` 预览
 
 ---
 

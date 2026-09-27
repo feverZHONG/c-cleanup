@@ -44,7 +44,7 @@
 | **CalabiYau 缓存** | `%LOCALAPPDATA%\CalabiYau\cache` + `QtWebEngine` | ~44 MB | 应用缓存 + 内嵌浏览器缓存。`Saved/` 是用户数据不碰 |
 | **GenerativeGame 崩溃日志** | `%LOCALAPPDATA%\GenerativeGame\.sentry-native` | ~0.5 MB | 崩溃日志，可删。`Saved/` 是用户数据不碰 |
 | **Doubao 缓存系列** | `%LOCALAPPDATA%\Doubao\User Data\Default\` 下 `Cache`/`Code Cache`/`GPUCache`/`Service Worker`/`DawnGraphiteCache` | ~100 MB | Chromium 缓存可重建。⚠ `IndexedDB` 是聊天记录（~1.1 GB）NoTouch |
-| **DriverStore 旧 NVIDIA 驱动** | `C:\Windows\System32\DriverStore\FileRepository\nvami.inf_amd64_*` | 2.6 GB/份 | 新旧驱动镜像各一份。旧版本用 `clean_driverstore.py` 删除（底层 pnputil，普通权限即可）。⚠ 若报 "devices are presently installed" 是引用计数未清，重启再试，勿用 `/force`。**⚠ 清之前先想清楚旧驱动的用途**（见下） |
+| **DriverStore 旧 NVIDIA 驱动** | `C:\Windows\System32\DriverStore\FileRepository\nvami.inf_amd64_*` | 2.6 GB/份 | 新旧驱动镜像各一份。`pnputil /delete-driver` **实测走不通**（`nvami.inf` 多版本共存 → 恒报 "presently installed"，重启无效，见 reference.md 2026-09-25 纠正）。可行路径是**文件级直删目录**：`clean_admin.ps1 -DriverStoreFiles`（自动比对 DriverVer，只删旧版）。**⚠ 代价：失去回滚到该旧版的能力** |
 | **NVIDIA App OTA缓存（旧版）** | `C:\ProgramData\NVIDIA Corporation\NVIDIA app\UpdateFramework\ota-artifacts\grd\post-processing\` 中**低于当前版本的 GUID 子目录** | 2~4 GB/个 | 通过 inf 内 `DriverVer` 判断版本（如 `32.0.16.1074`），低于当前驱动版本的可删。**⚠ 先杀 NVIDIA 进程再删** |
 | **NVIDIA App OTA缓存（当前版）** | 同上，但版本匹配当前驱动 | 2~4 GB | 可留作修复/回滚缓存，也可删（删了 App 下次更新会重新下载）。**⚠ 先杀进程** |
 
