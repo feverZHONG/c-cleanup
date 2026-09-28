@@ -6,7 +6,7 @@
 #     powershell -NoProfile -ExecutionPolicy Bypass -File clean_admin.ps1 -DriverStore
 #
 # Hermes 会话里无法自动提权（Start-Process -Verb RunAs 会被 UAC 取消，
-# 且 -Verb RunAs 与 -RedirectStandardOutput 参数集冲突），所以由阁下手动以管理员身份运行。
+# 且 -Verb RunAs 与 -RedirectStandardOutput 参数集冲突），所以由用户手动以管理员身份运行。
 #
 # 本文件必须存为 UTF-8 with BOM，否则 PS 5.1 按 GBK 读会吃掉引号导致解析失败。
 #

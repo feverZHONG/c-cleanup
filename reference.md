@@ -213,7 +213,7 @@ Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filte
 
 删除两个旧版本 ≈ **释放 5.4 GB**。
 
-**⏳ 当前待办（2026-09-25，等阁下管理员终端执行）：** 删除 oem131 (610.74) + oem246 (610.88) 两个旧版对应目录。
+**⏳ 当前待办（2026-09-25，等用户管理员终端执行）：** 删除 oem131 (610.74) + oem246 (610.88) 两个旧版对应目录。
 当前驱动 **616.92 / 32.0.16.1692**。已封装进 `scripts/clean_admin.ps1 -DriverStoreFiles`。
 
 ---
@@ -244,7 +244,7 @@ Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filte
 - `crd/`: 3.73 GB（610.47 NSD Studio Driver + Display.Driver 散件）
 - 没检查 NVIDIA App 状态就删了缓存，App 卡在安装界面，错误码 -505413605
 - 杀了 NVIDIA 进程重启 App 也没用（状态已损毁）
-- 最终结果：阁下手动从官网下载 610.47 装好
+- 最终结果：用户手动从官网下载 610.47 装好
 
 **最终状态：**
 - 删 OTA 缓存 10.87 GB，安装新驱动后又占回一些
@@ -318,11 +318,11 @@ vidia-smi 或 (Get-WmiObject Win32_VideoController).DriverVersion 确认当前�
 > 非提权会话下 `Remove-Item`、`Rename-Item` 一律报「对路径的访问被拒绝」，连目录里的单个 `EULA.txt` 都删不了。
 > 8-24 那条「Remove-Item 成功」记录**不可复现**，别再信——今天的三个目录（Nsight Systems 1,005 MB / Nsight Compute 624 MB / Installer2 320 MB）
 > 尺寸与 8-24 记录**完全一致地存在**，说明那次删除要么没生效、要么被后续驱动包重新解压覆盖（见下）。
-> **正确做法：交给阁下的管理员 PowerShell 跑 `scripts/clean_admin.ps1`**（已封装 Nsight×2 + Installer2 + WinUpdate 缓存，`-DriverStore` 带上旧驱动，支持 `-DryRun`）。
+> **正确做法：交给用户的管理员 PowerShell 跑 `scripts/clean_admin.ps1`**（已封装 Nsight×2 + Installer2 + WinUpdate 缓存，`-DriverStore` 带上旧驱动，支持 `-DryRun`）。
 
 ## 实战记录：2026-09-12（驱动持续 610.88，OTA 新周期后清理）
 
-**场景：** C 盘 99%（2.05 GiB），阁下要求检查并清理
+**场景：** C 盘 99%（2.05 GiB），用户要求检查并清理
 
 **第一轮（普通权限，全部实删成功）：**
 
@@ -337,7 +337,7 @@ vidia-smi 或 (Get-WmiObject Win32_VideoController).DriverVersion 确认当前�
 | **当前 DXCache（`clean_deep.py --force`）** | **2.17 GB** | 67 个 .nvph；7 个被占用跳过（含 2.15 GB 那个大文件已删） |
 | CrashDumps（手动清，已补进 `clean_safe.py`） | 204 MB | 崩溃转储 |
 
-**第二轮（需管理员，未执行 —— 交给阁下跑 `clean_admin.ps1`）：**
+**第二轮（需管理员，未执行 —— 交给用户跑 `clean_admin.ps1`）：**
 
 | 目标 | 待释放 | 说明 |
 |------|--------|------|

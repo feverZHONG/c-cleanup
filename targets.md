@@ -22,7 +22,7 @@
 
 > **⚠ 需要管理员权限的目标**：`C:\Program Files\*` 和 `C:\Windows\*` 下的所有目标，普通会话删不掉（访问被拒绝）。
 > Hermes 会话里也**无法自动提权**：`Start-Process -Verb RunAs` 会被 UAC 取消，且 `-Verb RunAs` 与 `-RedirectStandardOutput` 参数集冲突。
-> 统一走 `scripts/clean_admin.ps1`，由阁下在管理员 PowerShell 里手动运行（一次搞定 Nsight ×2 + Installer2 + WinUpdate 缓存，`-DriverStore` 可带上旧驱动）。
+> 统一走 `scripts/clean_admin.ps1`，由用户在管理员 PowerShell 里手动运行（一次搞定 Nsight ×2 + Installer2 + WinUpdate 缓存，`-DriverStore` 可带上旧驱动）。
 
 ## Confirm Targets（需用户确认）—— Trae AI IDE 数据
 
