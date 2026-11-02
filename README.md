@@ -4,7 +4,7 @@
 
 [English](README.en.md) · [![Python 3.8+](https://img.shields.io/badge/python-3.8%2B-blue)](#) [![Windows](https://img.shields.io/badge/platform-Windows%2010%2F11-brightgreen)](#)
 
-这是 **QClaw / OpenClaw 智能体平台** 的 C 盘清理技能（skill）。安装后可通过自然语言直接触发清理操作，也可作为独立工具手动运行。
+这是 **QClaw / OpenClaw 智能体平台** 的 C 盘清理技能（skill）。安装后可通过自然语言直接触发清理操作，也可作为独立工具手动运行。本 README 是**人/AI 双向说明书**：`SKILL.md` 是入口指路牌，`README.md` 是把每一步讲透的操作手册。
 
 ## 概述
 
@@ -97,6 +97,33 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -Dry
 ## 清理目标参考
 
 详见 [`targets.md`](targets.md) — 按 Safe / Confirm 分级列出各路径和典型大小。
+
+## 给 AI（智能体）的使用说明
+
+接到清理任务时按此顺序工作：
+
+1. **先读 `SKILL.md`**（索引 + 流程 + 踩坑）与 **`targets.md`**（分级权威：Safe / Confirm / NoTouch）
+2. **按场景取脚本**：一般清理 → `clean.py --level safe|conservative|all`；驱动 → `clean_deep.py` / `clean_driverstore.py`；需管理员 → `clean_admin.ps1`
+3. **先预览后执行**：任何 `--force` 操作前先跑 `--dry-run`（或 `clean_admin.ps1 -DryRun`）列出将释放量与代价，用户确认后才执行
+4. **提权目标不自动提权**：`C:\Program Files\*`、`C:\Windows\*` 目标普通会话删不掉，且 Hermes 自动提权会被 UAC 取消——直接输出 `clean_admin.ps1` 命令让用户在管理员 PowerShell 里跑
+5. **记录**：清理完成用 `--log` 追加到 `scripts/cleanup_history.md`（历史表唯一权威，reference.md 只留摘要示例）
+
+**分级对照（targets.md 三档）**：
+- **Safe** → 直接清；**Confirm** → 列出代价等用户点头（当前 DXCache 重建耗时、DriverStore 失去回滚、OTA 先杀 NVIDIA 进程、剪映只清 Cache/ 与 CEF/Cache/）；**NoTouch** → 只报告（系统文件、注册表、运行中数据、用户文档、剪映 AI 模型、豆包 IndexedDB、QClaw 记忆）
+
+**红线（无论用户怎么要求都不做）**：不删 `System32` / DriverStore 当前驱动 / `Program Files` 本体 / `WinSxS`；不用 `pnputil /delete-driver /force`；删 OTA 缓存前先杀 NVIDIA 进程；用户没点名的 Confirm 项一律不清。
+
+**常见坑速记**：
+- `pnputil /delete-driver` 对 `nvami.inf` 多版本共存恒报 "presently installed"，重启无效（2026-09-25 纠正）→ 走 `clean_admin.ps1 -DriverStoreFiles` 文件级直删
+- NVIDIA App 更新后会把 Nsight / Installer2 重新装回来（2026-09-12 实测），清完复查
+- `.ps1` 必须 UTF-8 with BOM，否则 PS 5.1 中文注释乱码报错；Markdown / frontmatter 不要 BOM
+
+## 维护纪律
+
+1. **功能更新必须同步文档再提交**：新增/修改脚本后同步 `targets.md`（分级）、`reference.md`（详情）、`README.md`/`README.en.md`（一览表）、`SKILL.md`（索引）
+2. **新增清理目标**：先评估三档归属再落 `targets.md`，并同步脚本硬编码列表（updater 列表需手动加）
+3. **参数/档位变化**：`clean.py --level` 档位与各脚本参数变化必须同步 reference.md 速查表
+4. 历史记录只写 `scripts/cleanup_history.md`
 
 ## 环境要求
 
