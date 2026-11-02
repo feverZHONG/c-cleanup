@@ -4,19 +4,21 @@
 
 | 脚本 | 用途 | 运行方式 |
 |------|------|----------|
-| `python scripts/clean.py` | 🏆 统一入口，推荐使用 | `--level safe`（默认）<br>`--level conservative`<br>`--level all`<br>`--level deep` |
+| `python scripts/clean.py` | 🏆 统一入口，推荐使用 | `--level safe`（默认）<br>`--level conservative`<br>`--level all`<br>`--level deep`<br>`--level winupdate` |
 | `python scripts/status.py` | 查看 C 盘空间 | 直接运行 |
 | `python scripts/scan_appdata.py` | 扫描 AppData\Local >100MB 目录 | 直接运行 |
 | `python scripts/clean_safe.py` | 安全清理（updater/Temp/旧DXCache/ima/NEO/GameViewer/OfficePLUS） | 直接运行<br>`--dry-run` 预览<br>`--log` 记录 |
 | `python scripts/clean_conservative.py` | 保守清理（Edge缓存/PowerToys/Steam/Doubao/bililive） | 直接运行<br>`--dry-run` 预览<br>`--log` 记录 |
 | `python scripts/clean_deep.py` | 深度清理（当前DXCache） | 默认只读；`--force` 才删 |
 | `python scripts/clean_winupdate.py` | Windows Update 缓存 | `--force` 才删（需管理员） |
+| `python scripts/clean_driverstore.py` | DriverStore 旧 NVIDIA 驱动清理 | 默认只读；`--force` 才删（需管理员） |
+| `powershell -File scripts/clean_admin.ps1` | ⭐ 提权批处理：Nsight×2 + Installer2 + WinUpdate 缓存（+ `-DriverStoreFiles` 清旧驱动） | 需管理员 PowerShell；先 `-DryRun` 预览 |
 
 ---
 
 ## 统一入口 clean.py（推荐）
 
-整合安全清理、保守清理、深度清理。单命令覆盖多数场景。
+整合安全清理、保守清理、深度清理、WinUpdate。单命令覆盖多数场景。
 
 | 命令 | 说明 |
 |------|------|
@@ -26,6 +28,7 @@
 | `python scripts/clean.py --level all --dry-run` | 预览全部可释放空间 |
 | `python scripts/clean.py --level all --log` | 安全+保守并记录到清理历史 |
 | `python scripts/clean.py --level deep --force` | 执行深度清理 |
+| `python scripts/clean.py --level winupdate --force` | 执行 Windows Update 缓存清理（需管理员） |
 
 **所有子脚本支持的参数也适用于 clean.py**（`--dry-run`/`--log`/`--force` 自动透传）。
 
@@ -87,6 +90,15 @@ $p = Start-Process python -ArgumentList "`"$script`" --force" -Verb RunAs -PassT
 ```
 脚本自身检测到非管理员会退出并报错，所以必须提权跑。Windows Update 下载缓存（SoftwareDistribution\Download）可达 3~6 GB，**系统更新卡住/空间不足时优先清它**——它往往就是更新失败的元凶。
 
+### DriverStore 旧驱动清理 clean_driverstore.py
+
+| 模式 | 命令 | 说明 |
+|------|------|------|
+| 只读扫描 | `python scripts/clean_driverstore.py` | 列出 DriverStore 内所有 NVIDIA 驱动目录与 DriverVer，自动识别当前版本 |
+| 真正执行 | `python scripts/clean_driverstore.py --force` | 文件级直删旧版驱动目录（自动保留当前版本） |
+
+需以管理员身份运行。**⚠ 代价：失去回滚到该旧版的能力**；`pnputil /delete-driver` 走不通（`nvami.inf` 多版本共存恒报 "presently installed"，见下「2026-09-25 重要纠正」），文件级直删是唯一可行路径。
+
 ### 状态查看 status.py
 
 快速查看 C 盘空间。同时显示 GB（十进制）和 GiB（二进制），解资源管理器与脚本数字不同的问题。
@@ -122,7 +134,7 @@ net start wuauserv
 
 ## 清理历史
 
-记录文件：`scripts/cleanup_history.md`
+记录文件：`scripts/cleanup_history.md`（用 `--log` 自动追加）
 
 | 日期 | 类型 | 清理前 (GB) | 清理后 (GB) | 释放 (GB) |
 |------|------|-------------|-------------|-----------|
@@ -155,10 +167,7 @@ net start wuauserv
 
 ### 🔴 2026-09-25 重要纠正：「重启后再试」是无效经验
 
-**背景：** 2026-08-24 记录待办「重启后删 oem131.inf」，此后 9-12、9-25 两次会话重新尝试，
-报错始终是 `One or more devices are presently installed using the specified INF`。
-**系统 2026-09-22 已重启过**（`(Get-CimInstance Win32_OperatingSystem).LastBootUpTime` 实测），
-重启后依然无法删除 → **坐实「重启释放引用计数」的假设是错的。**
+**背景：** 2026-08-24 记录待办「重启后删 oem131.inf」，此后 9-12、9-25 两次会话重新尝试，报错始终是 `One or more devices are presently installed using the specified INF`。**系统 2026-09-22 已重启过**（`(Get-CimInstance Win32_OperatingSystem).LastBootUpTime` 实测），重启后依然无法删除 → **坐实「重启释放引用计数」的假设是错的。**
 
 **真实原因（2026-09-25 实测定位）：**
 
@@ -168,9 +177,7 @@ net start wuauserv
 | Display class registry（`HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-...}`） | RTX 4060 只绑 **oem280.inf**（32.0.16.1692）；其余四个虚拟显示适配器是 Intel/Parsec/GameViewer/OrayIdd，与 nvami 无关 |
 | oem131 / oem246 / oem280 | **Original Name 全是 `nvami.inf`** |
 
-**结论：** 挡路的是 **`nvami.inf` 这个 Original Name 的多版本共存登记**，不是设备实例引用。
-只要当前驱动（oem280 = nvami.inf）还装着，Windows 就永远拒绝删除同名的旧版本包。
-**除了卸载重装显卡驱动，`pnputil /delete-driver` 这条路走不通 —— 别再等重启了。**
+**结论：** 挡路的是 **`nvami.inf` 这个 Original Name 的多版本共存登记**，不是设备实例引用。只要当前驱动（oem280 = nvami.inf）还装着，Windows 就永远拒绝删除同名的旧版本包。**除了卸载重装显卡驱动，`pnputil /delete-driver` 这条路走不通 —— 别再等重启了。**
 
 **可行的替代方案：文件级删除（绕过 pnputil，直接删 DriverStore 目录）**
 
@@ -182,8 +189,7 @@ Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filte
   ForEach-Object { Remove-Item $_.FullName -Recurse -Force }
 ```
 
-**⚠ 用前必须核实哪个目录是当前驱动：** 目录名是哈希，与 oem 号无法直接对应。
-核对方式（`DriverVersion` 对不上就别删）：
+**⚠ 用前必须核实哪个目录是当前驱动：** 目录名是哈希，与 oem 号无法直接对应。核对方式（`DriverVersion` 对不上就别删）：
 ```powershell
 # 逐个目录读 nvami.inf 的 DriverVer，找 32.0.16.1692（= 当前驱动）
 Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filter 'nvami.inf_amd64_*' |
@@ -199,8 +205,7 @@ Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filte
 - ✅ 当前驱动完全不受影响，GPU 正常工作
 - ❌ **失去「回滚驱动程序」到该旧版的能力**（设备管理器里那个按钮会失效）
 - ⚠ **`DriverStore\FileRepository` 需管理员权限**（Owner: `NT AUTHORITY\SYSTEM`，`BUILTIN\Users` 只有 ReadAndExecute）
-- ⚠ 删目录属**未走正规卸载流程**，Windows 的驱动包索引不会同步更新。
-  实测删完系统正常，但这属于「取舍」不是「无风险」——**只删确定用不到的旧版本**。
+- ⚠ 删目录属**未走正规卸载流程**，Windows 的驱动包索引不会同步更新。实测删完系统正常，但这属于「取舍」不是「无风险」——**只删确定用不到的旧版本**。
 - 🔁 别用 `pnputil /delete-driver /force`（技能内明令禁止，会把设备搞成无驱动状态）
 
 **2026-09-25 实测目录清单（三个 nvami 共 8,119 MB）：**
@@ -213,8 +218,7 @@ Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filte
 
 删除两个旧版本 ≈ **释放 5.4 GB**。
 
-**⏳ 当前待办（2026-09-25，等用户管理员终端执行）：** 删除 oem131 (610.74) + oem246 (610.88) 两个旧版对应目录。
-当前驱动 **616.92 / 32.0.16.1692**。已封装进 `scripts/clean_admin.ps1 -DriverStoreFiles`。
+**⏳ 当前待办（2026-09-25，等用户管理员终端执行）：** 删除 oem131 (610.74) + oem246 (610.88) 两个旧版对应目录。当前驱动 **616.92 / 32.0.16.1692**。已封装进 `scripts/clean_admin.ps1 -DriverStoreFiles`。
 
 ---
 
@@ -255,7 +259,6 @@ Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filte
 
 - **< 5 GB** → 报告用户，建议清理
 - **< 2 GB** → 停止写入，优先清理
----
 
 ## 实战记录：2026-07-19（NVIDIA OTA 缓存版本检测 + Nsight 清理）
 
@@ -270,8 +273,7 @@ Get-ChildItem 'C:\Windows\System32\DriverStore\FileRepository' -Directory -Filte
 
 **版本判断方法：** 每个 GUID 子目录下 Display.Driver\*.inf 文件中有字段 DriverVer = MM/DD/YYYY, 32.0.16.xxxx
 - 版本号转换：32.0.16.1074 → 610.74（取后三位小数 + 首位）
-- 用 
-vidia-smi 或 (Get-WmiObject Win32_VideoController).DriverVersion 确认当前版本
+- 用 nvidia-smi 或 (Get-WmiObject Win32_VideoController).DriverVersion 确认当前版本
 
 **本次清理清单：**
 - 旧版 OTA 缓存（c7e7f7f1, ~3.7 GB）→ 待删
@@ -316,9 +318,8 @@ vidia-smi 或 (Get-WmiObject Win32_VideoController).DriverVersion 确认当前�
 > Owner: NT AUTHORITY\SYSTEM
 > ```
 > 非提权会话下 `Remove-Item`、`Rename-Item` 一律报「对路径的访问被拒绝」，连目录里的单个 `EULA.txt` 都删不了。
-> 8-24 那条「Remove-Item 成功」记录**不可复现**，别再信——今天的三个目录（Nsight Systems 1,005 MB / Nsight Compute 624 MB / Installer2 320 MB）
-> 尺寸与 8-24 记录**完全一致地存在**，说明那次删除要么没生效、要么被后续驱动包重新解压覆盖（见下）。
-> **正确做法：交给用户的管理员 PowerShell 跑 `scripts/clean_admin.ps1`**（已封装 Nsight×2 + Installer2 + WinUpdate 缓存，`-DriverStore` 带上旧驱动，支持 `-DryRun`）。
+> 8-24 那条「Remove-Item 成功」记录**不可复现**，别再信——今天的三个目录（Nsight Systems 1,005 MB / Nsight Compute 624 MB / Installer2 320 MB）尺寸与 8-24 记录**完全一致地存在**，说明那次删除要么没生效、要么被后续驱动包重新解压覆盖（见下）。
+> **正确做法：交给用户的管理员 PowerShell 跑 `scripts/clean_admin.ps1`**（已封装 Nsight×2 + Installer2 + WinUpdate 缓存，`-DriverStoreFiles` 带上旧驱动，支持 `-DryRun`）。
 
 ## 实战记录：2026-09-12（驱动持续 610.88，OTA 新周期后清理）
 
@@ -346,14 +347,11 @@ vidia-smi 或 (Get-WmiObject Win32_VideoController).DriverVersion 确认当前�
 | NVIDIA Installer2 | 320 MB | 安装器残留 |
 | Windows Update 下载缓存 | 681 MB | SoftwareDistribution\Download |
 | **小计** | **≈ 2.6 GB** | |
-| DriverStore oem131.inf（32.0.16.1074，旧 610.74） | 2.63 GB | 需 `-DriverStore`；注意 8-24 曾报 pnputil 引用计数未清 |
+| DriverStore oem131.inf（32.0.16.1074，旧 610.74） | 2.63 GB | 需 `-DriverStoreFiles`；注意 8-24 曾报 pnputil 引用计数未清 |
 
 **C 盘结果：** 2.05 GiB → 5.41 GiB（**+3.36 GB**，纯普通权限部分）
 
-**⚠ 新发现 · 驱动包会自己回来：** OTA 缓存出现**新的 GUID `420b76ed491bc58a93b21a298a235674`**（`ota-artifacts\nvapp\post-processing\` 699 MB + `nvapp\` 175 MB，
-共 874 MB，属当前版本 32.0.16.1088）。这说明 610.88 之后 NVIDIA App 又走过一次更新/修复流程，
-**驱动包重新解压会把 `Program Files\NVIDIA Corporation\` 下的 Nsight/Installer2 一起装回来**——
-所以这三个目录属于「清了还会再来」的目标，不值得逐次纠结，但要记得每次清完复查。
+**⚠ 新发现 · 驱动包会自己回来：** OTA 缓存出现**新的 GUID `420b76ed491bc58a93b21a298a235674`**（`ota-artifacts\nvapp\post-processing\` 699 MB + `nvapp\` 175 MB，共 874 MB，属当前版本 32.0.16.1088）。这说明 610.88 之后 NVIDIA App 又走过一次更新/修复流程，**驱动包重新解压会把 `Program Files\NVIDIA Corporation\` 下的 Nsight/Installer2 一起装回来**——所以这三个目录属于「清了还会再来」的目标，不值得逐次纠结，但要记得每次清完复查。
 
 **其他观察：**
 - `%LOCALAPPDATA%\SquirrelTemp` 已是空目录（KOOK 残留此前已清），已补进 `clean_safe.py` 作为常备目标
@@ -367,6 +365,5 @@ vidia-smi 或 (Get-WmiObject Win32_VideoController).DriverVersion 确认当前�
 # 在管理员 PowerShell 里
 powershell -NoProfile -ExecutionPolicy Bypass -File clean_admin.ps1 -DryRun      # 先预览
 powershell -NoProfile -ExecutionPolicy Bypass -File clean_admin.ps1              # 实删
-powershell -NoProfile -ExecutionPolicy Bypass -File clean_admin.ps1 -DriverStore # 带上旧驱动
+powershell -NoProfile -ExecutionPolicy Bypass -File clean_admin.ps1 -DriverStoreFiles # 带上旧驱动
 ```
-

@@ -22,7 +22,7 @@
 
 > **⚠ 需要管理员权限的目标**：`C:\Program Files\*` 和 `C:\Windows\*` 下的所有目标，普通会话删不掉（访问被拒绝）。
 > Hermes 会话里也**无法自动提权**：`Start-Process -Verb RunAs` 会被 UAC 取消，且 `-Verb RunAs` 与 `-RedirectStandardOutput` 参数集冲突。
-> 统一走 `scripts/clean_admin.ps1`，由用户在管理员 PowerShell 里手动运行（一次搞定 Nsight ×2 + Installer2 + WinUpdate 缓存，`-DriverStore` 可带上旧驱动）。
+> 统一走 `scripts/clean_admin.ps1`，由用户在管理员 PowerShell 里手动运行（一次搞定 Nsight ×2 + Installer2 + WinUpdate 缓存，`-DriverStoreFiles` 可带上旧驱动）。
 
 ## Confirm Targets（需用户确认）—— Trae AI IDE 数据
 
@@ -74,8 +74,8 @@
 
 ## 清理历史记录格式
 
-每次清理追加到 `reference.md` 清理历史表：
+每次清理用 `--log` 自动追加到 **`scripts/cleanup_history.md`**（历史表不维护在 reference.md，reference.md 仅保留摘要示例）：
 
 ```
-| YYYY-MM-DD | 清理前 | 清理后 | 释放 | 主要来源 |
+| YYYY-MM-DD | 类型 | 清理前 (GB) | 清理后 (GB) | 释放 (GB) |
 ```
