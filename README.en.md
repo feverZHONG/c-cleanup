@@ -23,6 +23,7 @@ Core principles:
 | 🔧 Conservative Cleanup | Edge browser cache, PowerToys updates, Steam cache, D3DSCache, bililive cache, Doubao code cache |
 | ⚠️ Deep Cleanup | Current NVIDIA driver shader cache (`--force` required) |
 | 🪟 Windows Update | Service-stop cleanup of download cache (admin required) |
+| 🧹 Driver Store Cleanup | Old NVIDIA drivers in DriverStore (file-level delete, keeps current version, admin required) |
 | 🔍 Space Diagnostics | Scan AppData\Local for directories >100MB |
 | 📊 Status | One-command C: drive overview |
 
@@ -37,6 +38,8 @@ Core principles:
 | `clean_conservative.py` | Conservative cleanup | `python scripts/clean_conservative.py` |
 | `clean_deep.py` | Deep cleanup (current DXCache) | `python scripts/clean_deep.py` (read-only)<br>`python scripts/clean_deep.py --force` |
 | `clean_winupdate.py` | Windows Update cache | `python scripts/clean_winupdate.py` (read-only)<br>`python scripts/clean_winupdate.py --force` |
+| `clean_driverstore.py` | Old NVIDIA drivers in DriverStore | `python scripts/clean_driverstore.py` (read-only)<br>`python scripts/clean_driverstore.py --force` |
+| `clean_admin.ps1` | ⭐ Admin-elevated batch: Nsight×2 + Installer2 + WinUpdate cache + DriverStore | Admin PowerShell: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -DryRun` (preview first) |
 
 ## Installation
 
@@ -73,6 +76,12 @@ python scripts/clean_safe.py                    # Safe cleanup
 python scripts/clean_safe.py --dry-run          # Safe cleanup preview
 python scripts/clean_conservative.py            # Conservative cleanup
 python scripts/clean_deep.py                    # Deep cleanup (read-only scan)
+python scripts/clean_winupdate.py --force       # Windows Update cache (admin required)
+python scripts/clean_driverstore.py --force     # DriverStore old drivers (admin required)
+
+# Admin targets (Nsight/Installer2/WinUpdate/DriverStore) go through the elevated batch:
+# In an admin PowerShell, preview first, then run for real.
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -DryRun
 ```
 
 ## Safety Tiers
@@ -97,10 +106,11 @@ See [`targets.md`](targets.md) — categorized by Safe / Confirm with paths and 
 
 ## Disclaimer
 
-`clean_deep.py --force` and `clean_winupdate.py --force` carry risks:
+`clean_deep.py --force`, `clean_winupdate.py --force` and `clean_driverstore.py --force` carry risks:
 - Deep cleanup triggers game shader recompilation (first-load slowdown only)
 - Windows Update cache cleanup causes re-download of updates
-- Both default to read-only mode; explicit `--force` flag required for execution
+- DriverStore old-driver deletion loses the ability to "roll back the driver" to that old version (see reference.md 2026-09-25 correction)
+- All three default to read-only mode; explicit `--force` flag required for execution
 
 ## License
 

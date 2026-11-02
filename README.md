@@ -23,6 +23,7 @@
 | 🔧 保守清理 | Edge 浏览器缓存、PowerToys 更新包、Steam 缓存、D3DSCache、bililive 直播缓存、豆包代码缓存 |
 | ⚠️ 深度清理 | 当前 NVIDIA 驱动着色器缓存（`--force` 确认） |
 | 🪟 Windows Update | 停服清理下载缓存（需管理员权限） |
+| 🧹 驱动仓库清理 | DriverStore 旧 NVIDIA 驱动（文件级直删，自动保留当前版本，需管理员权限） |
 | 🔍 空间诊断 | 扫描 AppData\Local 下所有 >100MB 的目录 |
 | 📊 状态查看 | 一键查看 C 盘使用情况 |
 
@@ -37,6 +38,8 @@
 | `clean_conservative.py` | 保守清理 | `python scripts/clean_conservative.py` |
 | `clean_deep.py` | 深度清理（当前 DXCache） | `python scripts/clean_deep.py`（只读）<br>`python scripts/clean_deep.py --force` |
 | `clean_winupdate.py` | Windows Update 缓存 | `python scripts/clean_winupdate.py`（只读）<br>`python scripts/clean_winupdate.py --force` |
+| `clean_driverstore.py` | DriverStore 旧 NVIDIA 驱动清理 | `python scripts/clean_driverstore.py`（只读）<br>`python scripts/clean_driverstore.py --force` |
+| `clean_admin.ps1` | ⭐ 提权批处理：Nsight×2 + Installer2 + WinUpdate 缓存 + DriverStore | 管理员 PowerShell：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -DryRun`（先预览） |
 
 ## 安装
 
@@ -73,6 +76,12 @@ python scripts/clean_safe.py                    # 安全清理
 python scripts/clean_safe.py --dry-run          # 安全清理预览
 python scripts/clean_conservative.py            # 保守清理
 python scripts/clean_deep.py                    # 深度清理（只读扫描）
+python scripts/clean_winupdate.py --force       # Windows Update 缓存（需管理员）
+python scripts/clean_driverstore.py --force     # DriverStore 旧驱动（需管理员）
+
+# 需管理员的目标（Nsight/Installer2/WinUpdate/DriverStore）走提权批处理：
+# 管理员 PowerShell 里先预览再实删
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -DryRun
 ```
 
 ## 安全原则
@@ -97,10 +106,11 @@ python scripts/clean_deep.py                    # 深度清理（只读扫描）
 
 ## 免责声明
 
-`clean_deep.py --force` 和 `clean_winupdate.py --force` 属于风险操作：
+`clean_deep.py --force`、`clean_winupdate.py --force` 和 `clean_driverstore.py --force` 属于风险操作：
 - 深度清理后游戏着色器需重新编译，首次加载变慢
 - Windows Update 缓存清理后系统会重新下载更新
-- 两脚本默认只读扫描，需显式传递 `--force` 才会执行
+- DriverStore 旧驱动删除后失去「回滚驱动程序」到该旧版的能力（详见 reference.md 2026-09-25 纠正）
+- 三脚本默认只读扫描，需显式传递 `--force` 才会执行
 
 ## 许可
 
