@@ -19,6 +19,8 @@
 | **SquirrelTemp 更新残留** | `%LOCALAPPDATA%\SquirrelTemp` | 0~600 MB | .NET Squirrel 安装器（KOOK 等）的更新包残留，含 `*.nupkg` + `app-*.7z`。清内容不删目录 |
 | **Nsight**（⚠需管理员） | `C:\Program Files\NVIDIA Corporation\Nsight Systems *` / `Nsight Compute *` | ~1.6 GB | CUDA 开发者调试工具，纯剪辑/游戏用户用不到，可直接删。**Program Files 需管理员** → 用 `scripts/clean_admin.ps1` |
 | **NVIDIA Installer2**（⚠需管理员） | `C:\Program Files\NVIDIA Corporation\Installer2` | ~300 MB | NVIDIA 安装器残留缓存，可直接删除。**需管理员** → 用 `scripts/clean_admin.ps1` |
+| **华硕出厂驱动包** | `C:\eSupport\eDriver` | 4.9 GB | ASUS 机（TUF FX507VU）出厂驱动安装包。删了不影响系统，驱动可从华硕官网按型号重下。**2026-11-06 实测可删，清出 4.91 GB** |
+| **Windows 更新残留**（⚠需管理员） | `C:\$WinREAgent` | 1~2 GB | `Backup`(winre.wim) + `Scratch`(update.wim) + `Rollback`。更新完就不用了。**实测普通会话删不掉（TrustedInstaller 持有）**，需管理员或磁盘清理 |
 
 > **⚠ 需要管理员权限的目标**：`C:\Program Files\*` 和 `C:\Windows\*` 下的所有目标，普通会话删不掉（访问被拒绝）。
 > Hermes 会话里也**无法自动提权**：`Start-Process -Verb RunAs` 会被 UAC 取消，且 `-Verb RunAs` 与 `-RedirectStandardOutput` 参数集冲突。
@@ -47,6 +49,7 @@
 | **DriverStore 旧 NVIDIA 驱动** | `C:\Windows\System32\DriverStore\FileRepository\nvami.inf_amd64_*` | 2.6 GB/份 | 新旧驱动镜像各一份。`pnputil /delete-driver` **实测走不通**（`nvami.inf` 多版本共存 → 恒报 "presently installed"，重启无效，见 reference.md 2026-09-25 纠正）。可行路径是**文件级直删目录**：`clean_admin.ps1 -DriverStoreFiles`（自动比对 DriverVer，只删旧版）。**⚠ 代价：失去回滚到该旧版的能力** |
 | **NVIDIA App OTA缓存（旧版）** | `C:\ProgramData\NVIDIA Corporation\NVIDIA app\UpdateFramework\ota-artifacts\grd\post-processing\` 中**低于当前版本的 GUID 子目录** | 2~4 GB/个 | 通过 inf 内 `DriverVer` 判断版本（如 `32.0.16.1074`），低于当前驱动版本的可删。**⚠ 先杀 NVIDIA 进程再删** |
 | **NVIDIA App OTA缓存（当前版）** | 同上，但版本匹配当前驱动 | 2~4 GB | 可留作修复/回滚缓存，也可删（删了 App 下次更新会重新下载）。**⚠ 先杀进程** |
+| **华硕出厂恢复映像** | `C:\Recovery\Customizations\usmt.ppkg` | 6.4 GB | ASUS OEM 定制恢复包，供「设置→恢复→重置此电脑」用。**⚠ 删了失去一键恢复出厂能力**（本地重装系统仍可用 U 盘/媒体创建工具）。普通会话**可删**（2026-11-06 实测，清出 6.43 GB）。留空目录别删 `C:\Recovery` 本身 |
 
 ## NoTouch（绝对不碰）
 
