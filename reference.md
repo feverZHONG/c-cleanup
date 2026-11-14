@@ -12,6 +12,7 @@
 | `python scripts/clean_deep.py` | 深度清理（当前DXCache） | 默认只读；`--force` 才删 |
 | `python scripts/clean_winupdate.py` | Windows Update 缓存 | `--force` 才删（需管理员） |
 | `python scripts/clean_driverstore.py` | DriverStore 驱动包清理（当前驱动以注册表绑定版本为准） | 默认只读；`--force` 才删（需管理员） |
+| `python scripts/clean_mi.py` | 小米互联服务缓存（相册同步 gallery / AI 搜索索引） | 默认只读；`--force` 才删 |
 | `powershell -File scripts/clean_admin.ps1` | ⭐ 提权批处理：Nsight×2 + Installer2 + WinUpdate 缓存 + `$WinREAgent` + `WinSxS\Temp`（`-DriverStoreFiles` 清非当前驱动包，`-DisableHibernate` 关休眠） | 需管理员 PowerShell；先 `-DryRun` 预览 |
 
 ---

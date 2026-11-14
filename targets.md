@@ -53,6 +53,28 @@
 | **NVIDIA App OTA缓存（当前版）** | 同上，但版本匹配当前驱动 | 2~4 GB | 可留作修复/回滚缓存，也可删（删了 App 下次更新会重新下载）。**⚠ 先杀进程** |
 | **华硕出厂恢复映像** | `C:\Recovery\Customizations\usmt.ppkg` | 6.4 GB | ASUS OEM 定制恢复包，供「设置→恢复→重置此电脑」用。**⚠ 删了失去一键恢复出厂能力**（本地重装系统仍可用 U 盘/媒体创建工具）。普通会话**可删**（2026-11-06 实测，清出 6.43 GB）。留空目录别删 `C:\Recovery` 本身 |
 
+## 小米互联服务（MI）—— 2026-11-14 首次摸底
+
+> 阁下当天新装（`Program Files\MI` 建于 22:40）。**整套 2.97 GB 起步，且安装/使用过程中仍在增长。**
+> 同一时间它往 C 盘系统 Python 装了约 760 MB 语音栈（torch/sympy/vosk/transformers/speech_recognition，22:41–22:43），
+> 疑似 AIService 的 Python 依赖 —— **别当垃圾清**。
+> 除下表标注可清的缓存外，其余全属「正在使用的功能」，一律不碰。
+>
+> ⚠ **gallery 是活体增长项**：2026-11-14 一小时内 931 MB → 1.14 GB，正在从手机同步相册。
+> 它在同步完成前会一直吃盘，这是 C 盘「清完又掉」的元凶之一。
+
+| 档位 | 路径 | 大小 | 说明 |
+|------|------|------|------|
+| Safe | `%LOCALAPPDATA%\MI\ContinuityApp\Cache` + `GPUCache` + `logs` | ~22 MB | 应用缓存与日志，可重建。体积小，`clean_conservative` 顺带带走即可 |
+| Confirm | `%LOCALAPPDATA%\MI\ContinuityApp\micloud\gallery` | 0.9~1.2 GB 且**在涨** | **相册同步缓存**。手机端保留原件，删了下次打开相册重新拉。→ `clean_mi.py --force` |
+| Confirm | `%PROGRAMDATA%\MI\AIService\search\cache` | ~450 MB 且**在涨** | **AI 搜索索引库** `ai_database1.db`。删了会重建、也会随使用继续增长。**治本是设置里关掉「AI 搜索 / 本地索引」**，别在清理上跟它拉锯 |
+| NoTouch | `C:\Program Files\MI\*` | 1.4~1.5 GB | 程序本体：HyperConnect ~1.03 GB（互联/互传核心）+ AIService ~0.42 GB |
+| NoTouch | `%LOCALAPPDATA%\MI\ContinuityApp\miclaw.sqlite` | ~90 MB | 对话/状态库 |
+| NoTouch | `%LOCALAPPDATA%\MI\ContinuityApp\micloud\note\attachments` | ~55 MB | 笔记附件同步 |
+| NoTouch | `%LOCALAPPDATA%\MI\ContinuityApp\runtimes` | ~26 MB | 运行时 |
+| NoTouch | `%LOCALAPPDATA%\MI\ContinuityApp\Partitions\*\Preferences`、`SharedStorage`、`DIPS` | 小 | WebView 分区状态，删了要重新登录/配置（同目录下的 `GPUCache`/`DawnGraphiteCache` 才是缓存） |
+| NoTouch | `%LOCALAPPDATA%\Programs\Python\Python311\Lib\site-packages\{torch,sympy,vosk,transformers,speech_recognition,whisper}` | ~760 MB | 随小米互联服务装入的语音栈（22:41–22:43 时间戳），**不是垃圾** |
+
 ## NoTouch（绝对不碰）
 
 这些是运行时组件或用户数据，不是缓存，不能清理。

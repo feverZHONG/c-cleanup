@@ -26,6 +26,7 @@ description: C盘安全清理与空间回收技能。当用户提到清理C盘�
 | `scripts/clean_deep.py` | 深度清理：当前 DXCache（`--force` 才删） |
 | `scripts/clean_winupdate.py` | Windows Update 缓存（`--force` 才删，需管理员） |
 | `scripts/clean_driverstore.py` | DriverStore 驱动包清理（扫描+`--force`；当前驱动以注册表绑定版本为准，取不到则放弃不猜） |
+| `scripts/clean_mi.py` | 小米互联服务缓存（相册同步 gallery + AI 搜索索引，扫描+`--force`；本体与数据不碰） |
 | `scripts/clean_admin.ps1` | **⭐ 提权批处理**：Nsight×2 + Installer2 + WinUpdate 缓存 + `$WinREAgent` + `WinSxS\Temp`（`-DriverStore` 走 pnputil，`-DriverStoreFiles` 走文件级直删，`-DisableHibernate` 关休眠释放 hiberfil.sys）。需用户在管理员 PowerShell 里跑 |
 | `scripts/scan_appdata.py` | 扫描 AppData\Local 大户 |
 | `targets.md` | 清理目标分级表（Safe / Confirm / NoTouch） |

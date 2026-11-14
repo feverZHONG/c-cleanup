@@ -39,6 +39,7 @@
 | `clean_deep.py` | 深度清理（当前 DXCache） | `python scripts/clean_deep.py`（只读）<br>`python scripts/clean_deep.py --force` |
 | `clean_winupdate.py` | Windows Update 缓存 | `python scripts/clean_winupdate.py`（只读）<br>`python scripts/clean_winupdate.py --force` |
 | `clean_driverstore.py` | DriverStore 旧 NVIDIA 驱动清理 | `python scripts/clean_driverstore.py`（只读）<br>`python scripts/clean_driverstore.py --force` |
+| `clean_mi.py` | 小米互联服务缓存（相册同步 / AI 搜索索引） | `python scripts/clean_mi.py`（只读）<br>`python scripts/clean_mi.py --force` |
 | `clean_admin.ps1` | ⭐ 提权批处理：Nsight×2 + Installer2 + WinUpdate 缓存 + `$WinREAgent` + `WinSxS\Temp` + DriverStore + 休眠文件（`-DisableHibernate`） | 管理员 PowerShell：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -DryRun`（先预览） |
 
 ## 安装
@@ -119,6 +120,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -Dry
   `HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-...}\<0000>\DriverVersion`。取不到就**放弃删除**，不猜
 - `pnputil` 输出随系统语言变（中文「发布名称/原始名称/驱动程序版本」），解析必须 `encoding="mbcs"` 且正则兼容中英文，否则 `UnicodeDecodeError` 直接崩
 - 扫描 C 盘大户**必须包含**根目录单文件（`hiberfil.sys` / `pagefile.sys` / `swapfile.sys` 合计可占 8 GB+）和 `C:\Windows` 子目录（`SoftwareDistribution\Download`、`Installer`、`DriverStore`）——只扫 `AppData` 会漏掉最大的几块
+- **清完空间又掉 = 有活体在写，别重复清**（2026-11-14 实测）：静态扫描只告诉你「现在多大」，看不到「正在长」。按 `st_mtime` 筛最近 20 分钟写入的文件才能抓到元凶。当晚真凶：小米互联 `micloud\gallery` 一小时内 931 MB → 1.15 GB（同步手机相册）、`AIService\search\cache\ai_database1.db` 持续增长、QQ 日志 `QQ.tlg.1` 单文件 100 MB。**这类项删了会回来，治本是关功能/改设置，不是反复清**
+- 判断「是不是我清出来的」：`GetDiskFreeSpaceExW` 的 Used 会随时变化，清理后 5 分钟内复测一次做基线；掉得比清理量还快，就是有活体进程
 - NVIDIA App 更新后会把 Nsight / Installer2 重新装回来（2026-09-12 实测），清完复查
 - `.ps1` 必须 UTF-8 with BOM，否则 PS 5.1 中文注释乱码报错；Markdown / frontmatter 不要 BOM
 

@@ -95,6 +95,14 @@ reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "Ca
 # -- GenerativeGame 崩溃日志 (Saved 是用户数据，不碰) --
 reclaimed += (_dry_rm_dir if DRY_RUN else rm_dir)(os.path.join(localappdata, "GenerativeGame", ".sentry-native"), "GenerativeGame .sentry-native")
 
+# -- 小米互联服务 ContinuityApp 应用缓存/日志 --
+# 只清 Cache/GPUCache/logs 这三处小缓存。micloud\gallery（相册同步 ~1 GB 且在涨）
+# 和 AIService\search\cache（AI 索引）属 Confirm，走 clean_mi.py --force，不在这儿顺手删。
+# miclaw.sqlite / micloud\note\attachments / Partitions\* 是用户数据，不碰。详见 targets.md。
+for sub in ("Cache", "GPUCache", "logs"):
+    reclaimed += (_dry_rm_dir_contents if DRY_RUN else rm_dir_contents)(
+        os.path.join(localappdata, "MI", "ContinuityApp", sub), f"MI ContinuityApp {sub}")
+
 print()
 tag = "将释放" if DRY_RUN else "释放"
 print(f"=== 总计{tag}: {human(reclaimed)} ===")
