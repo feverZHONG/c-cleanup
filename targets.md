@@ -21,6 +21,8 @@
 | **NVIDIA Installer2**（⚠需管理员） | `C:\Program Files\NVIDIA Corporation\Installer2` | ~300 MB | NVIDIA 安装器残留缓存，可直接删除。**需管理员** → 用 `scripts/clean_admin.ps1` |
 | **华硕出厂驱动包** | `C:\eSupport\eDriver` | 4.9 GB | ASUS 机（TUF FX507VU）出厂驱动安装包。删了不影响系统，驱动可从华硕官网按型号重下。**2026-11-06 实测可删，清出 4.91 GB** |
 | **Windows 更新残留**（⚠需管理员） | `C:\$WinREAgent` | 1~2 GB | `Backup`(winre.wim) + `Scratch`(update.wim) + `Rollback`。更新完就不用了。**实测普通会话删不掉（TrustedInstaller 持有）**，需管理员或磁盘清理 |
+| **WinSxS 临时区**（⚠需管理员） | `C:\Windows\WinSxS\Temp` | 几百 MB~1 GB | DISM 工作目录，**不是组件库本体**（组件库是 `WinSxS` 本身，绝不动）。更新/CBS 跑完即残留 |
+| **休眠文件**（⚠需管理员） | `C:\hiberfil.sys` | ≈ 物理内存 × 40%（16G 机器约 6.3 GB） | `powercfg /h off` 关闭休眠后自动删除。**代价：失去休眠 + 快速启动**（合盖变睡眠，电池缓耗）。`powercfg /h on` 可恢复。脚本开关 `-DisableHibernate` |
 
 > **⚠ 需要管理员权限的目标**：`C:\Program Files\*` 和 `C:\Windows\*` 下的所有目标，普通会话删不掉（访问被拒绝）。
 > Hermes 会话里也**无法自动提权**：`Start-Process -Verb RunAs` 会被 UAC 取消，且 `-Verb RunAs` 与 `-RedirectStandardOutput` 参数集冲突。
@@ -46,7 +48,7 @@
 | **CalabiYau 缓存** | `%LOCALAPPDATA%\CalabiYau\cache` + `QtWebEngine` | ~44 MB | 应用缓存 + 内嵌浏览器缓存。`Saved/` 是用户数据不碰 |
 | **GenerativeGame 崩溃日志** | `%LOCALAPPDATA%\GenerativeGame\.sentry-native` | ~0.5 MB | 崩溃日志，可删。`Saved/` 是用户数据不碰 |
 | **Doubao 缓存系列** | `%LOCALAPPDATA%\Doubao\User Data\Default\` 下 `Cache`/`Code Cache`/`GPUCache`/`Service Worker`/`DawnGraphiteCache` | ~100 MB | Chromium 缓存可重建。⚠ `IndexedDB` 是聊天记录（~1.1 GB）NoTouch |
-| **DriverStore 旧 NVIDIA 驱动** | `C:\Windows\System32\DriverStore\FileRepository\nvami.inf_amd64_*` | 2.6 GB/份 | 新旧驱动镜像各一份。`pnputil /delete-driver` **实测走不通**（`nvami.inf` 多版本共存 → 恒报 "presently installed"，重启无效，见 reference.md 2026-09-25 纠正）。可行路径是**文件级直删目录**：`clean_admin.ps1 -DriverStoreFiles`（自动比对 DriverVer，只删旧版）。**⚠ 代价：失去回滚到该旧版的能力** |
+| **DriverStore 旧 NVIDIA 驱动** | `C:\Windows\System32\DriverStore\FileRepository\nvami.inf_amd64_*` | 2.6~3 GB/份 | 新旧驱动镜像各一份。`pnputil /delete-driver` **实测走不通**（`nvami.inf` 多版本共存 → 恒报 "presently installed"，重启无效，见 reference.md 2026-09-25 纠正）。可行路径是**文件级直删目录**：`clean_admin.ps1 -DriverStoreFiles` / `clean_driverstore.py --force`。**⚠ 当前驱动只能以「设备实际绑定的注册表 DriverVersion」为准，不能取版本号最大**——NVIDIA App 可能已把新版包装进 DriverStore 却没绑到设备（2026-11-14 实测：库里有 32.0.16.2101，设备仍绑 32.0.16.1742，按版本号排序会把正在用的驱动当旧版删掉）。**⚠ 代价：失去回滚到被删版本的能力** |
 | **NVIDIA App OTA缓存（旧版）** | `C:\ProgramData\NVIDIA Corporation\NVIDIA app\UpdateFramework\ota-artifacts\grd\post-processing\` 中**低于当前版本的 GUID 子目录** | 2~4 GB/个 | 通过 inf 内 `DriverVer` 判断版本（如 `32.0.16.1074`），低于当前驱动版本的可删。**⚠ 先杀 NVIDIA 进程再删** |
 | **NVIDIA App OTA缓存（当前版）** | 同上，但版本匹配当前驱动 | 2~4 GB | 可留作修复/回滚缓存，也可删（删了 App 下次更新会重新下载）。**⚠ 先杀进程** |
 | **华硕出厂恢复映像** | `C:\Recovery\Customizations\usmt.ppkg` | 6.4 GB | ASUS OEM 定制恢复包，供「设置→恢复→重置此电脑」用。**⚠ 删了失去一键恢复出厂能力**（本地重装系统仍可用 U 盘/媒体创建工具）。普通会话**可删**（2026-11-06 实测，清出 6.43 GB）。留空目录别删 `C:\Recovery` 本身 |

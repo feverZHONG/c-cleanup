@@ -23,7 +23,7 @@
 | 🔧 保守清理 | Edge 浏览器缓存、PowerToys 更新包、Steam 缓存、D3DSCache、bililive 直播缓存、豆包代码缓存 |
 | ⚠️ 深度清理 | 当前 NVIDIA 驱动着色器缓存（`--force` 确认） |
 | 🪟 Windows Update | 停服清理下载缓存（需管理员权限） |
-| 🧹 驱动仓库清理 | DriverStore 旧 NVIDIA 驱动（文件级直删，自动保留当前版本，需管理员权限） |
+| 🧹 驱动仓库清理 | DriverStore 旧 NVIDIA 驱动（文件级直删，以**注册表里设备实际绑定的版本**为当前，需管理员权限） |
 | 🔍 空间诊断 | 扫描 AppData\Local 下所有 >100MB 的目录 |
 | 📊 状态查看 | 一键查看 C 盘使用情况 |
 
@@ -39,7 +39,7 @@
 | `clean_deep.py` | 深度清理（当前 DXCache） | `python scripts/clean_deep.py`（只读）<br>`python scripts/clean_deep.py --force` |
 | `clean_winupdate.py` | Windows Update 缓存 | `python scripts/clean_winupdate.py`（只读）<br>`python scripts/clean_winupdate.py --force` |
 | `clean_driverstore.py` | DriverStore 旧 NVIDIA 驱动清理 | `python scripts/clean_driverstore.py`（只读）<br>`python scripts/clean_driverstore.py --force` |
-| `clean_admin.ps1` | ⭐ 提权批处理：Nsight×2 + Installer2 + WinUpdate 缓存 + DriverStore | 管理员 PowerShell：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -DryRun`（先预览） |
+| `clean_admin.ps1` | ⭐ 提权批处理：Nsight×2 + Installer2 + WinUpdate 缓存 + `$WinREAgent` + `WinSxS\Temp` + DriverStore + 休眠文件（`-DisableHibernate`） | 管理员 PowerShell：`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -DryRun`（先预览） |
 
 ## 安装
 
@@ -115,6 +115,10 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -Dry
 
 **常见坑速记**：
 - `pnputil /delete-driver` 对 `nvami.inf` 多版本共存恒报 "presently installed"，重启无效（2026-09-25 纠正）→ 走 `clean_admin.ps1 -DriverStoreFiles` 文件级直删
+- **当前驱动 ≠ 版本号最大的那个**（2026-11-14 实测）：NVIDIA App 会把新版包装进 DriverStore 却不绑设备，此时设备仍跑旧版。判断当前驱动只认注册表
+  `HKLM\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-...}\<0000>\DriverVersion`。取不到就**放弃删除**，不猜
+- `pnputil` 输出随系统语言变（中文「发布名称/原始名称/驱动程序版本」），解析必须 `encoding="mbcs"` 且正则兼容中英文，否则 `UnicodeDecodeError` 直接崩
+- 扫描 C 盘大户**必须包含**根目录单文件（`hiberfil.sys` / `pagefile.sys` / `swapfile.sys` 合计可占 8 GB+）和 `C:\Windows` 子目录（`SoftwareDistribution\Download`、`Installer`、`DriverStore`）——只扫 `AppData` 会漏掉最大的几块
 - NVIDIA App 更新后会把 Nsight / Installer2 重新装回来（2026-09-12 实测），清完复查
 - `.ps1` 必须 UTF-8 with BOM，否则 PS 5.1 中文注释乱码报错；Markdown / frontmatter 不要 BOM
 

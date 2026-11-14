@@ -15,6 +15,7 @@
 param(
     [switch]$DriverStore,       # 清 DriverStore 旧驱动（pnputil 正规卸载路径）
     [switch]$DriverStoreFiles,  # ⭐ 清 DriverStore 旧驱动（文件级直删，绕过 pnputil 引用计数）
+    [switch]$DisableHibernate,  # 关闭休眠，释放 C:\hiberfil.sys（代价：失去休眠 + 快速启动）
     [switch]$DryRun
 )
 
@@ -74,6 +75,30 @@ if (Test-Path $wu) {
     }
 }
 
+# --- Safe: Windows 恢复环境更新残留（C:\$WinREAgent）---
+# Backup=winre.wim 备份 / Scratch=update.wim 临时解压区 / Rollback=回滚点。更新完即无用。
+Remove-Target 'C:\$WinREAgent' 'WinREAgent 更新残留'
+
+# --- Safe: WinSxS 临时区（DISM 工作目录，不是组件库本体）---
+Remove-Target 'C:\Windows\WinSxS\Temp' 'WinSxS\Temp 临时区'
+
+# --- Confirm: 关闭休眠，释放 C:\hiberfil.sys（需 -DisableHibernate）---
+if ($DisableHibernate) {
+    $hf = 'C:\hiberfil.sys'
+    $s = if (Test-Path $hf) { (Get-Item $hf -Force -EA SilentlyContinue).Length } else { 0 }
+    if ($DryRun) {
+        $script:rows += ("[DRY]  关闭休眠将释放 hiberfil.sys : {0:N0} MB（代价：失去休眠 + 快速启动）" -f ($s/1MB))
+    } else {
+        powercfg /h off 2>&1 | Out-Null
+        Start-Sleep -Seconds 2
+        $a = if (Test-Path $hf) { (Get-Item $hf -Force -EA SilentlyContinue).Length } else { 0 }
+        $script:freed += ($s - $a)
+        $script:rows += ("[OK]   关闭休眠 : {0:N0} MB（休眠/快速启动已关闭，powercfg /h on 可恢复）" -f (($s-$a)/1MB))
+    }
+} else {
+    $script:rows += "[SKIP] 休眠文件 hiberfil.sys : 未加 -DisableHibernate 开关"
+}
+
 # --- Confirm: DriverStore 旧 NVIDIA 驱动 ---
 # 两条路：
 #   -DriverStore      → pnputil /delete-driver（正规卸载）。⚠ 实测走不通：
@@ -102,7 +127,8 @@ if ($DriverStoreFiles) {
     $cls = 'HKLM:\SYSTEM\CurrentControlSet\Control\Class\{4d36e968-e325-11ce-bfc1-08002be10318}'
     Get-ChildItem $cls -EA SilentlyContinue | ForEach-Object {
         $p = Get-ItemProperty $_.PSPath -EA SilentlyContinue
-        if ($p.InfPath -eq 'oem280.inf' -or $p.DriverDesc -match 'RTX 4060') { $curVer = $p.DriverVersion }
+        # 按显卡描述匹配，不硬编码 oem 编号（oem 编号每装一次驱动就变，硬编码必然过期）
+        if ($p.DriverDesc -match 'NVIDIA' -and $p.DriverVersion) { $curVer = $p.DriverVersion }
     }
     if (-not $curVer) {
         $script:rows += "[WARN] 无法确定当前驱动版本，跳过 DriverStore 文件级清理（保险起见不删）"
