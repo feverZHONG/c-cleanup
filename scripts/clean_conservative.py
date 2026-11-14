@@ -14,6 +14,9 @@ else:
     print("=== C盘保守清理 ===")
 print()
 
+# 清理前基准：账本要的是「动手前还剩多少」，必须在任何删除发生之前取
+free_start = get_c_drive_free()
+
 def _dry_rm_dir(path, label):
     """Dry-run: scan dir size, no delete."""
     if os.path.isdir(path):
@@ -96,10 +99,9 @@ print()
 tag = "将释放" if DRY_RUN else "释放"
 print(f"=== 总计{tag}: {human(reclaimed)} ===")
 
-free_before = get_c_drive_free()
-print(f"C 盘剩余: {free_before/1e9:.1f} GB")
+free_now = get_c_drive_free()
+print(f"C 盘剩余: {free_now/1e9:.1f} GB")
 
 if LOG and not DRY_RUN and reclaimed > 0:
-    free_after = get_c_drive_free()
     log_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "cleanup_history.md")
-    log_cleanup("保守清理", free_before / 1e9, free_after / 1e9, reclaimed / 1e9, log_path)
+    log_cleanup("保守清理", free_start / 1e9, free_now / 1e9, reclaimed / 1e9, log_path)

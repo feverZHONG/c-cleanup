@@ -4,7 +4,7 @@
 
 | 目标 | 路径 | 典型大小 | 说明 |
 |------|------|----------|------|
-| **Updater 缓存** | `AppData\Local\` 下以 `*-updater` 或 `@*` 的文件夹 | 0.1~3 GB | 各类软件的更新缓存，删除自动重建。⚠ 脚本内为硬编码列表（见 clean_safe.py），新出现的 updater 需手动加入，如 `com.ugreen.desktop-updater`（UGREEN NAS 客户端，~425 MB）、`@deepseek-aidsh-desktop-updater`（~158 MB）、`chatglm-updater`（~63 MB）、`qclaw-updater`（~518 MB） |
+| **Updater 缓存** | `AppData\Local\` 下以 `*-updater` 或 `@*` 的文件夹 | 0.1~3 GB | 各类软件的更新缓存，删除自动重建。⚠ 脚本内为硬编码列表（见 clean_safe.py），新出现的 updater 需手动加入，如 `com.ugreen.desktop-updater`（UGREEN NAS 客户端，~425 MB）、`@deepseek-aidsh-desktop-updater`（~158 MB）、`chatglm-updater`（~63 MB）、`qclaw-updater`（~518 MB）、`starlit-desktop-updater`（~877 MB，单文件 installer.exe）、`xiaomi-mimo-desktop-updater`（~339 MB，单文件 installer.exe） |
 | **C 盘根目录临时文件** | `C:\temp_ts_merge` | 0.1~1 GB | TS 下载临时碎片，视频下完即可删除 |
 | **旧 NVIDIA 驱动缓存** | `NVIDIA\DXCache\` 中非当前驱动前缀的文件 | 几十 MB~数 GB | 不同前缀=不同驱动版本。非当前前缀可直接删除。当前前缀通过 `clean_deep.py` 扫描确定 |
 | **用户 Temp** | `%TEMP%` | 几十~几百 MB | 临时文件，无实际用途 |
