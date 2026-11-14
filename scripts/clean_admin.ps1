@@ -26,7 +26,10 @@ $script:rows  = @()
 function Remove-Target {
     param([string]$Path, [string]$Label)
     if (-not (Test-Path $Path)) { $script:rows += ("[SKIP] {0} : 不存在" -f $Label); return }
-    $size = (Get-ChildItem $Path -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum).Sum
+    # ⚠ -Force 必须带：$WinREAgent 等目录内文件带 Hidden/System 属性，
+    #   不带 -Force 统计恒为 0 MB（2026-11-14 实测：0 MB vs 实际 1972 MB），
+    #   既误导预览，也让释放量账本少算。
+    $size = (Get-ChildItem $Path -Recurse -File -Force -EA SilentlyContinue | Measure-Object Length -Sum).Sum
     if ($DryRun) { $script:rows += ("[DRY]  {0} : {1:N0} MB" -f $Label, ($size/1MB)); return }
     try {
         Remove-Item $Path -Recurse -Force -EA Stop
@@ -35,7 +38,7 @@ function Remove-Target {
     } catch {
         # 被占用时退化为「清内容保留目录」
         Get-ChildItem $Path -Force -EA SilentlyContinue | Remove-Item -Recurse -Force -EA SilentlyContinue
-        $after = (Get-ChildItem $Path -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum).Sum
+        $after = (Get-ChildItem $Path -Recurse -File -Force -EA SilentlyContinue | Measure-Object Length -Sum).Sum
         $got = $size - $after
         $script:freed += $got
         $script:rows += ("[PART] {0} : {1:N0} MB (目录保留)" -f $Label, ($got/1MB))
@@ -62,14 +65,14 @@ Remove-Target (Join-Path $nv 'Installer2') 'NVIDIA Installer2 残留'
 $wu = 'C:\Windows\SoftwareDistribution\Download'
 if (Test-Path $wu) {
     if ($DryRun) {
-        $s = (Get-ChildItem $wu -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum).Sum
+        $s = (Get-ChildItem $wu -Recurse -File -Force -EA SilentlyContinue | Measure-Object Length -Sum).Sum
         $script:rows += ("[DRY]  Windows Update 下载缓存 : {0:N0} MB" -f ($s/1MB))
     } else {
-        $s = (Get-ChildItem $wu -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum).Sum
+        $s = (Get-ChildItem $wu -Recurse -File -Force -EA SilentlyContinue | Measure-Object Length -Sum).Sum
         net stop wuauserv /y 2>&1 | Out-Null
         Get-ChildItem $wu -Force -EA SilentlyContinue | Remove-Item -Recurse -Force -EA SilentlyContinue
         net start wuauserv 2>&1 | Out-Null
-        $a = (Get-ChildItem $wu -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum).Sum
+        $a = (Get-ChildItem $wu -Recurse -File -Force -EA SilentlyContinue | Measure-Object Length -Sum).Sum
         $script:freed += ($s - $a)
         $script:rows += ("[PART] Windows Update 下载缓存 : {0:N0} MB (目录保留)" -f (($s-$a)/1MB))
     }
@@ -143,7 +146,7 @@ if ($DriverStoreFiles) {
                 $line = (Select-String -Path $infFile -Pattern '^\s*DriverVer' | Select-Object -First 1).Line
                 if ($line -match ',\s*([\d.]+)\s*$') {
                     $ver = $Matches[1]
-                    $sz = (Get-ChildItem $_.FullName -Recurse -File -EA SilentlyContinue | Measure-Object Length -Sum).Sum
+                    $sz = (Get-ChildItem $_.FullName -Recurse -File -Force -EA SilentlyContinue | Measure-Object Length -Sum).Sum
                     $cands += [pscustomobject]@{ Name = $_.Name; Full = $_.FullName; Ver = $ver; Size = $sz }
                 }
             }

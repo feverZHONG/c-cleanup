@@ -122,6 +122,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/clean_admin.ps1 -Dry
 - 扫描 C 盘大户**必须包含**根目录单文件（`hiberfil.sys` / `pagefile.sys` / `swapfile.sys` 合计可占 8 GB+）和 `C:\Windows` 子目录（`SoftwareDistribution\Download`、`Installer`、`DriverStore`）——只扫 `AppData` 会漏掉最大的几块
 - **清完空间又掉 = 有活体在写，别重复清**（2026-11-14 实测）：静态扫描只告诉你「现在多大」，看不到「正在长」。按 `st_mtime` 筛最近 20 分钟写入的文件才能抓到元凶。当晚真凶：小米互联 `micloud\gallery` 一小时内 931 MB → 1.15 GB（同步手机相册）、`AIService\search\cache\ai_database1.db` 持续增长、QQ 日志 `QQ.tlg.1` 单文件 100 MB。**这类项删了会回来，治本是关功能/改设置，不是反复清**
 - 判断「是不是我清出来的」：`GetDiskFreeSpaceExW` 的 Used 会随时变化，清理后 5 分钟内复测一次做基线；掉得比清理量还快，就是有活体进程
+- **`Get-ChildItem -Recurse -File` 必须带 `-Force`**（2026-11-14 实测）：隐藏/系统属性的文件默认不列，`$WinREAgent` 统计出来是 **0 MB，实际 1972 MB**。后果不只是预览难看——`Remove-Item -Force` 照样删得掉，但 `$script:freed` 加的是 0，释放量账本凭空少 1.9 GB。统计与删除路径一律带 `-Force`
 - NVIDIA App 更新后会把 Nsight / Installer2 重新装回来（2026-09-12 实测），清完复查
 - `.ps1` 必须 UTF-8 with BOM，否则 PS 5.1 中文注释乱码报错；Markdown / frontmatter 不要 BOM
 
